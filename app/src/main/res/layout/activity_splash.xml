@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <!-- ImageView for the ComfyBuy logo -->
+    <ImageView
+        android:id="@+id/appLogo"
+        android:layout_width="200dp"
+        android:layout_height="50dp"
+        android:src="@drawable/comfybuy_logo"
+    android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+     />
+
+    <!-- Tagline TextView -->
+    <TextView
+        android:id="@+id/tagline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Buy and Sell Comfortably"
+        android:textSize="16sp"
+        android:textColor="#6D6D6D"
+        android:layout_below="@id/appLogo"
+        android:layout_centerHorizontal="true"
+        />
+
+    <!-- Bottom Line -->
+    <View
+        android:id="@+id/bottomLine"
+        android:layout_width="100dp"
+        android:layout_height="1dp"
+        android:layout_marginTop="800dp"
+        android:background="#000000"
+        android:layout_centerHorizontal="true"
+         />
+
+</RelativeLayout>

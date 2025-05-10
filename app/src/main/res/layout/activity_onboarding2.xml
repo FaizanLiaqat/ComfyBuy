@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#D7D2FF"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <de.hdodenhof.circleimageview.CircleImageView xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/onboardingIcon"
+        android:layout_width="260dp"
+        android:layout_height="260dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="26dp"
+        android:src="@drawable/onboarding2"
+        app:civ_border_color="#E9EAF9"
+        app:civ_border_width="2dp"
+        />
+
+    <!-- Title TextView -->
+    <TextView
+        android:id="@+id/onboardingTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="45dp"
+        android:gravity="center"
+        android:text="Sell in minutes"
+        android:textColor="#000000"
+        android:textSize="26sp"
+        android:textStyle="bold" />
+
+    <!-- Description TextView -->
+    <TextView
+        android:id="@+id/onboardingDescription"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:gravity="center"
+        android:text="Take a photo, set your price, and sell your items in no time..."
+        android:textColor="#6D6D6D"
+        android:textSize="17sp" />
+
+    <ImageView
+        android:id="@+id/appLogo"
+        android:layout_width="60dp"
+        android:layout_height="20dp"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:layout_marginTop="80dp"
+        android:paddingBottom="2dp"
+        android:paddingRight="3dp"
+        android:background="@drawable/rounded_corner_image_2"
+        android:src="@drawable/dottwo" />
+
+    <Button
+        android:id="@+id/nextButton"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginTop="90dp"
+        android:backgroundTint="#FFFFFF"
+        android:text="Next >"
+        android:textColor="#000000"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/skipButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:layout_marginTop="16dp"
+        android:layout_marginRight="5dp"
+        android:text="Skip"
+        android:textColor="#0284FF"
+        android:textSize="12sp" />
+
+    <View
+        android:id="@+id/bottomLine"
+        android:layout_width="80dp"
+        android:layout_height="3dp"
+        android:layout_marginTop="70dp"
+        android:background="#000000" />
+
+</LinearLayout>

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_color">
+
+    <!-- Search Bar -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/searchBarCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="16dp"
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="2dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp">
+
+            <ImageView
+                android:id="@+id/ivSearch"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@string/search_icon"
+                android:src="@drawable/ic_search"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="@color/text_secondary" />
+
+            <EditText
+                android:id="@+id/etSearch"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="@null"
+                android:hint="@string/search_hint"
+                android:importantForAutofill="no"
+                android:inputType="text"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary"
+                android:textSize="14sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/ivSearch"
+                app:layout_constraintTop_toTopOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Filter Chips -->
+    <HorizontalScrollView
+        android:id="@+id/filterScrollView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:scrollbars="none"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/searchBarCard">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipCategory"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:checkable="true"
+                android:text="@string/category"
+                android:textColor="@color/purple_text"
+                app:chipBackgroundColor="@color/purple_light"
+                app:chipIcon="@drawable/ic_category"
+                app:chipIconTint="@color/purple_text"
+                app:chipStartPadding="8dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipPrice"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:checkable="true"
+                android:text="@string/price_range"
+                android:textColor="@color/green_text"
+                app:chipBackgroundColor="@color/green_light"
+                app:chipStartPadding="8dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipLocation"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/within"
+                android:textColor="@color/text_primary"
+                app:chipBackgroundColor="@color/chip_background"
+                app:chipIcon="@drawable/ic_location"
+                app:chipIconTint="@color/text_primary"
+                app:chipStartPadding="8dp" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Sort Options -->
+    <RadioGroup
+        android:id="@+id/sortRadioGroup"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/filterScrollView">
+
+        <RadioButton
+            android:id="@+id/rbNewest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/newest_first"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp" />
+
+        <RadioButton
+            android:id="@+id/rbPriceLowHigh"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/price_low_to_high"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp" />
+
+        <RadioButton
+            android:id="@+id/rbClosest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/closest_to_you"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp" />
+    </RadioGroup>
+
+    <!-- Product Grid -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewProducts"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:clipToPadding="false"
+        android:paddingBottom="80dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sortRadioGroup"
+        tools:listitem="@layout/item_product" />
+
+    <include
+        android:id="@+id/bottomNavContainer"
+        layout="@layout/layout_bottom_navigation"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

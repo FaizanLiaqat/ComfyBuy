@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "675968083301",
+    "project_id": "messamfaizanahmed",
+    "storage_bucket": "messamfaizanahmed.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:675968083301:android:71c1b96a0d24149a30ed8c",
+        "android_client_info": {
+          "package_name": "com.muhammadahmedmufii.comfybuy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFr0wmy0jZ9DDpTquFH7KhFWTXl6dPZNM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:padding="4dp">
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:src="@drawable/ic_apple"
+        app:civ_border_width="0dp"/>
+
+    <LinearLayout
+        android:layout_marginStart="8dp"
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <!-- Text bubble -->
+        <TextView
+            android:id="@+id/tvReceivedText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_received"
+            android:padding="8dp"
+            android:textSize="14sp"
+            android:textColor="#000000"/>
+
+        <!-- Image bubble -->
+        <ImageView
+            android:id="@+id/ivReceivedImage"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:visibility="gone"
+            android:scaleType="centerCrop"
+            android:layout_marginTop="4dp"/>
+
+        <TextView
+            android:id="@+id/tvReceivedTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="10sp"
+            android:textColor="#999999"
+            android:layout_marginTop="2dp"/>
+    </LinearLayout>
+</LinearLayout>

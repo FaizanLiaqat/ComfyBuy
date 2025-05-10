@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="background_lavender">#F2F0FA</color>
+    <color name="text_primary">#333333</color>
+    <color name="text_secondary">#9E9E9E</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+    <color name="background_color">#F5F7FA</color>
+    <color name="text_tertiary">#9E9E9E</color>
+
+    <color name="icon_background_message">#F0EEFF</color>
+    <color name="icon_background_offer">#FFEFEF</color>
+    <color name="icon_background_alert">#E6FAF8</color>
+
+    <color name="icon_background">#F0EEFF</color>
+
+    <color name="purple_light">#FFF2EAFF</color>
+    <color name="purple_text">#FF6750A4</color>
+    <color name="green_light">#FFE6F7EC</color>
+    <color name="green_text">#FF1E8A3E</color>
+    <color name="chip_background">#FFEEEEEE</color>
+
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+</resources>

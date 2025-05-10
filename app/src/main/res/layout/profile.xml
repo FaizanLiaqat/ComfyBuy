@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/scrollView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="16dp">
+
+        <!-- HEADER: avatar + camera icon -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:paddingTop="24dp">
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/avatar"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_centerHorizontal="true"
+                android:src="@drawable/ic_apple"
+                app:civ_border_width="0dp" />
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/cameraIcon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_alignEnd="@id/avatar"
+                android:layout_alignBottom="@id/avatar"
+                android:layout_marginEnd="4dp"
+                android:layout_marginBottom="4dp"
+                android:src="@drawable/ic_google" />
+        </RelativeLayout>
+
+        <!-- NAME & SUBTITLE -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingTop="8dp">
+
+            <TextView
+                android:id="@+id/name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sarah Mitchell"
+                android:textSize="20sp"
+                android:textColor="#000000"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:id="@+id/subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Fashion enthusiast and vintage collector"
+                android:textSize="14sp"
+                android:textColor="#6D6D6D"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- EDIT PROFILE BUTTON -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:paddingTop="12dp"
+            android:paddingBottom="16dp">
+
+            <TextView
+                android:id="@+id/btnEditProfile"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="150dp"
+                android:layout_height="36dp"
+                android:text="Edit Profile"
+                android:textSize="14sp"
+                android:textColor="#FF6B6B"
+                android:background="@drawable/bg_edit_profile" />
+        </LinearLayout>
+
+        <!-- STATS: Listings / Followers / Following -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="3"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:background="@drawable/divider_top_bottom">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/countListings"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="12"
+                    android:textSize="16sp"
+                    android:textColor="#000000"
+                    android:fontFamily="sans-serif-medium" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Listings"
+                    android:textSize="12sp"
+                    android:textColor="#6D6D6D"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/countFollowers"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="258"
+                    android:textSize="16sp"
+                    android:textColor="#000000"
+                    android:fontFamily="sans-serif-medium" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Followers"
+                    android:textSize="12sp"
+                    android:textColor="#6D6D6D"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/countFollowing"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="184"
+                    android:textSize="16sp"
+                    android:textColor="#000000"
+                    android:fontFamily="sans-serif-medium" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Following"
+                    android:textSize="12sp"
+                    android:textColor="#6D6D6D"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- TABS: Listings | Favorites | Reviews -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:overScrollMode="never"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:layout_gravity="center"
+                android:paddingEnd="16dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:paddingHorizontal="16dp">
+
+                    <TextView
+                        android:id="@+id/tabListings"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Listings"
+                        android:textSize="14sp"
+                        android:textColor="#FF6B6B"
+                        android:fontFamily="sans-serif-medium" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="2dp"
+                        android:background="#FF6B6B"
+                        android:layout_marginTop="4dp"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:paddingHorizontal="16dp">
+
+                    <TextView
+                        android:id="@+id/tabFavorites"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Favorites"
+                        android:textSize="14sp"
+                        android:textColor="#6D6D6D"
+                        android:fontFamily="sans-serif" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="2dp"
+                        android:background="@android:color/transparent"
+                        android:layout_marginTop="4dp"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:paddingHorizontal="16dp">
+
+                    <TextView
+                        android:id="@+id/tabReviews"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Reviews"
+                        android:textSize="14sp"
+                        android:textColor="#6D6D6D"
+                        android:fontFamily="sans-serif" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="2dp"
+                        android:background="@android:color/transparent"
+                        android:layout_marginTop="4dp"/>
+                </LinearLayout>
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <!-- PRODUCT GRID -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerProducts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:clipToPadding="false"
+            android:nestedScrollingEnabled="false"/>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
