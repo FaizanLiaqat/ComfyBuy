@@ -55,6 +55,8 @@ class MainActivity : AppCompatActivity() {
             // TODO: Replace with MessagesFragment when created
             // replaceFragment(MessagesFragment())
             showPlaceholderToast("Messages")
+            val intent = Intent(this, Messages::class.java) // Create MessagesActivity
+            startActivity(intent)
             // TODO: Update UI state of bottom nav icons
         }
         findViewById<LinearLayout>(R.id.navProfile).setOnClickListener {
