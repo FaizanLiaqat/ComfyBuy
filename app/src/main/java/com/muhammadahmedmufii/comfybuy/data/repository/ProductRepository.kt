@@ -118,7 +118,7 @@ class ProductRepository @Inject constructor(
                 productImagesRtdbRef.child(product.productId).setValue(imagesMapForRtdb).await()
                 Log.i(TAG, "saveProduct: Saved ${imagesMapForRtdb.size} images to RTDB for ${product.productId}")
             } else {
-                productImagesRtdbRef.child(product.productId).removeValue().await()
+//                productImagesRtdbRef.child(product.productId).removeValue().await()
                 Log.d(TAG, "saveProduct: No images to save, cleared RTDB for ${product.productId}")
             }
 

@@ -313,28 +313,28 @@ class FirebaseRepository @Inject constructor(
     }.flowOn(Dispatchers.IO)
 
     // Initialize user follow counts if they don't exist
-    suspend fun initializeUserFollowCounts(userId: String) = withContext(Dispatchers.IO) {
-        try {
-            val userDoc = usersCollection.document(userId).get().await();
-
-            if (userDoc.exists()) {
-                val updates = hashMapOf<String, Any>()
-
-                if (!userDoc.contains("followerCount")) {
-                    updates["followerCount"] = 0
-                }
-                else if (!userDoc.contains("followingCount")) {
-                    updates["followingCount"] = 0
-                }
-                else if (updates.isNotEmpty()) {
-                    usersCollection.document(userId).set(updates, SetOptions.merge()).await()
-                    Log.d(TAG, "Initialized follow counts for user $userId")
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error initializing follow counts: ${e.message}")
-        }
-    }
+//    suspend fun initializeUserFollowCounts(userId: String) = withContext(Dispatchers.IO) {
+//        try {
+//            val userDoc = usersCollection.document(userId).get().await();
+//
+//            if (userDoc.exists()) {
+//                val updates = hashMapOf<String, Any>()
+//
+//                if (!userDoc.contains("followerCount")) {
+//                    updates["followerCount"] = 0
+//                }
+//                else if (!userDoc.contains("followingCount")) {
+//                    updates["followingCount"] = 0
+//                }
+//                else if (updates.isNotEmpty()) {
+//                    usersCollection.document(userId).set(updates, SetOptions.merge()).await()
+//                    Log.d(TAG, "Initialized follow counts for user $userId")
+//                }
+//            }
+//        } catch (e: Exception) {
+//            Log.e(TAG, "Error initializing follow counts: ${e.message}")
+//        }
+//    }
 
     // Get follower count
     suspend fun getFollowerCount(userId: String): Int = withContext(Dispatchers.IO) {

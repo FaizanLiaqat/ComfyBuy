@@ -58,9 +58,9 @@
         <activity
             android:name=".EditProfileActivity"
             android:exported="false" />
-        <activity
-            android:name=".FollowingActivity"
-            android:exported="false" />
+<!--        <activity-->
+<!--            android:name=".FollowingActivity"-->
+<!--            android:exported="false" />-->
         <activity
             android:name=".PersonalInfoActivity"
             android:exported="false" />

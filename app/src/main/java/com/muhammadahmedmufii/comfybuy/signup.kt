@@ -296,7 +296,7 @@ class signup : AppCompatActivity() {
                         // *** NEW: Trigger data fetch from Firestore to Room after successful auth ***
                         activityScope.launch {
                             try {
-                                userRepository.clearUserProfileImageFromRtdb(firebaseUser.uid)
+//                                userRepository.clearUserProfileImageFromRtdb(firebaseUser.uid)
                                 Log.d("Signup", "Triggering fetchAndSaveUser for email/password user: ${firebaseUser.uid}")
                                 userRepository.fetchAndSaveUser(firebaseUser.uid)
                                 Log.d("Signup", "fetchAndSaveUser completed for email/password user.")

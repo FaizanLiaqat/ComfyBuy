@@ -61,6 +61,7 @@ class ProductAdapter(
             if (firstBitmap != null) {
                 Log.d(TAG, "onBindViewHolder: Setting firstBitmap (width: ${firstBitmap.width}, height: ${firstBitmap.height}) for '${product.title}'")
                 holder.productImage.setImageBitmap(firstBitmap)
+                holder.productImage.invalidate()
             } else {
                 Log.w(TAG, "onBindViewHolder: First bitmap is null for '${product.title}' even though imageBitmaps list is not empty. Setting placeholder.")
                 holder.productImage.setImageResource(R.drawable.avatar_placeholder)
