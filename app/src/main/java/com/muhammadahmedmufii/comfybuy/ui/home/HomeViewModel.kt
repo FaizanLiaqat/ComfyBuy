@@ -9,22 +9,33 @@ import com.muhammadahmedmufii.comfybuy.data.local.AppDatabase // Import AppDatab
 import com.google.firebase.firestore.FirebaseFirestore // Import FirebaseFirestore
 import com.google.firebase.database.FirebaseDatabase // Import FirebaseDatabase
 import android.app.Application // ViewModelProvider.Factory needs Application context
+import android.util.Log
 import androidx.lifecycle.LiveData
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.onStart
 
 // ViewModel for the HomeActivity
 class HomeViewModel(application: Application) : ViewModel() {
+    private val TAG = "HomeVM"
+    private val productRepository: ProductRepository
 
-    // Manually get repository instance (ideally use Dependency Injection)
-    private val database = AppDatabase.getDatabase(application)
-    private val productDao = database.productDao()
-    private val firestore = FirebaseFirestore.getInstance()
-    private val realtimeDatabase = FirebaseDatabase.getInstance("https://messamfaizanahmed-default-rtdb.asia-southeast1.firebasedatabase.app")
+    init {
+        val database = AppDatabase.getDatabase(application)
+        val productDao = database.productDao()
+        val firestore = FirebaseFirestore.getInstance()
+        val realtimeDatabase = FirebaseDatabase.getInstance("https://messamfaizanahmed-default-rtdb.asia-southeast1.firebasedatabase.app")
+        productRepository = ProductRepository(productDao, firestore, realtimeDatabase)
+        Log.d(TAG, "ViewModel initialized. products LiveData created.")
+    }
 
-    private val productRepository = ProductRepository(productDao, firestore, realtimeDatabase)
-
-    // Expose the list of products from the repository as LiveData
-    // The UI (Activity/Fragment) will observe this LiveData
-    val products: LiveData<List<Product>> = productRepository.getAllProducts().asLiveData()
+    // Use the real-time flow
+    val products: LiveData<List<Product>> = productRepository.getRealtimeAllProducts()
+        .onStart { Log.d(TAG, "products flow collection started.") } // Log when collection starts
+        .catch { exception ->
+            Log.e(TAG, "Error in getRealtimeAllProducts flow", exception)
+            emit(emptyList())
+        }
+        .asLiveData()
 
     // You can add functions here for:
     // - Filtering products (interact with repository or filter the LiveData stream)

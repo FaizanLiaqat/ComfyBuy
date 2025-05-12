@@ -12,5 +12,6 @@ data class Product(
     var imageBitmaps: List<Bitmap> = emptyList(), // Changed from imageBitmap: Bitmap?
     // Optional: Add category and condition
     val category: String? = null,
-    val condition: String? = null
+    val condition: String? = null,
+    val timestamp: Long = System.currentTimeMillis()
 )

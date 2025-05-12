@@ -2,6 +2,7 @@ package com.muhammadahmedmufii.comfybuy.ui.home // Recommended package structure
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,7 +23,10 @@ import com.muhammadahmedmufii.comfybuy.SyncWorkScheduler
 
 // CHANGE: Renamed from 'home' to 'HomeFragment' and extends Fragment
 class HomeFragment : Fragment() {
-
+    private val TAG = "HomeFragment"
+    companion object {
+        fun newInstance() = HomeFragment()
+    }
     private lateinit var recycler: RecyclerView
     private lateinit var productAdapter: ProductAdapter
     private lateinit var homeViewModel: HomeViewModel
@@ -71,12 +75,12 @@ class HomeFragment : Fragment() {
 
         initViews(view) // Initialize UI elements from the inflated view
         setupRecyclerView() // Setup RecyclerView and Adapter
+        Log.d(TAG, "onViewCreated. Setting up observers.")
         observeViewModel() // Observe data from ViewModel
         setupCategoryListeners() // Setup Category button click listeners
         setupSearchBarListeners() // Setup Search bar/Filter icon listeners
 
-        // --- CHANGE: Remove setupBottomNavigation() call ---
-        // setupBottomNavigation() // Bottom navigation listeners are now handled in MainActivity
+
     }
 
     // --- CHANGE: Pass the inflated view to initViews ---
@@ -114,11 +118,19 @@ class HomeFragment : Fragment() {
     }
 
     private fun observeViewModel() {
-        // Observe the products LiveData from the ViewModel
-        // --- CHANGE: Use viewLifecycleOwner for observing LiveData in Fragments ---
         homeViewModel.products.observe(viewLifecycleOwner) { productList ->
-            // Update the adapter with the new list of products whenever it changes
-            productAdapter.submitList(productList) // Use submitList with ListAdapter
+            Log.i(TAG, "Products LiveData observer triggered. List size: ${productList.size}")
+            if (productList.isNotEmpty()) {
+                val firstProd = productList[0]
+                Log.d(TAG, "First product in list: ${firstProd.title}, Image count: ${firstProd.imageBitmaps.size}")
+                if (firstProd.imageBitmaps.isNotEmpty()) {
+                    Log.d(TAG, "First product's first bitmap is present: ${firstProd.imageBitmaps[0] != null} (Width: ${firstProd.imageBitmaps[0]?.width})")
+                } else {
+                    Log.d(TAG, "First product '${firstProd.title}' has no bitmaps in its list.")
+                }
+            }
+            productAdapter.submitList(productList)
+            Log.d(TAG, "Submitted list to adapter. Current adapter item count: ${productAdapter.itemCount}")
         }
     }
 

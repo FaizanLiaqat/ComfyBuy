@@ -1,6 +1,7 @@
 package com.muhammadahmedmufii.comfybuy // Use your main package name
 
 import android.graphics.Bitmap
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,7 +20,7 @@ class ProductAdapter(
     // Lambda function to handle item clicks. It receives the clicked Product object.
     private val onItemClick: (Product) -> Unit
 ) : ListAdapter<Product, ProductAdapter.ProductViewHolder>(ProductDiffCallback()) { // Inherit from ListAdapter
-
+    private val TAG = "ProductAdapter" // Logging Tag
     // ViewHolder class to hold the views for a single product item (item_product.xml)
     class ProductViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         // References to the UI elements in item_product.xml
@@ -54,19 +55,18 @@ class ProductAdapter(
 
         // --- CORRECTED IMAGE HANDLING ---
         // Check if the list of image bitmaps is not empty
+        Log.i(TAG, "onBindViewHolder: Binding product '${product.title}' (ID: ${product.productId}), total imageBitmaps: ${product.imageBitmaps.size}")
         if (product.imageBitmaps.isNotEmpty()) {
-            // Get the first bitmap from the list (if it exists and is not null)
-            product.imageBitmaps.firstOrNull()?.let { firstBitmap ->
+            val firstBitmap = product.imageBitmaps.firstOrNull()
+            if (firstBitmap != null) {
+                Log.d(TAG, "onBindViewHolder: Setting firstBitmap (width: ${firstBitmap.width}, height: ${firstBitmap.height}) for '${product.title}'")
                 holder.productImage.setImageBitmap(firstBitmap)
-            } ?: run {
-                // This case would be hit if imageBitmaps.firstOrNull() itself is null,
-                // which shouldn't happen if the list is not empty and contains non-null Bitmaps.
-                // Or if imageBitmaps was List<Bitmap?> and first was null.
-                // For List<Bitmap>, this inner run is less likely.
+            } else {
+                Log.w(TAG, "onBindViewHolder: First bitmap is null for '${product.title}' even though imageBitmaps list is not empty. Setting placeholder.")
                 holder.productImage.setImageResource(R.drawable.avatar_placeholder)
             }
         } else {
-            // If imageBitmaps list is empty, set a placeholder image
+            Log.d(TAG, "onBindViewHolder: No images for '${product.title}', setting placeholder.")
             holder.productImage.setImageResource(R.drawable.avatar_placeholder)
         }
         // --- END OF CORRECTED IMAGE HANDLING ---

@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 
 class CreateListingViewModel(application: Application) : AndroidViewModel(application) {
-
+    private val TAG = "CreateListingVM"
     private val productRepository: ProductRepository
     private val firebaseAuth: FirebaseAuth
 
@@ -32,6 +32,7 @@ class CreateListingViewModel(application: Application) : AndroidViewModel(applic
         val firestore = FirebaseFirestore.getInstance()
         val rtdb = FirebaseDatabase.getInstance("https://messamfaizanahmed-default-rtdb.asia-southeast1.firebasedatabase.app")
         productRepository = ProductRepository(db.productDao(), firestore, rtdb)
+        Log.d(TAG, "ViewModel initialized.")
     }
 
     fun createListing(
@@ -64,14 +65,15 @@ class CreateListingViewModel(application: Application) : AndroidViewModel(applic
             condition = condition, // Assign condition
             imageBitmaps = imageBitmaps // Assign list of bitmaps
         )
-
+        Log.i(TAG, "createListing: Attempting to save product via repository. Product ID: ${newProduct.productId}, Image count: ${newProduct.imageBitmaps.size}")
         viewModelScope.launch {
             try {
                 Log.d("CreateListingVM", "Saving product with ${imageBitmaps.size} images: $newProduct")
                 productRepository.saveProduct(newProduct) // Pass the product which contains the image list
+                Log.i(TAG, "createListing: productRepository.saveProduct call successful for ${newProduct.productId}")
                 _saveStatus.postValue(ListingSaveStatus.Success("Listing created successfully!"))
             } catch (e: Exception) {
-                Log.e("CreateListingVM", "Failed to create listing", e)
+                Log.e(TAG, "createListing: Failed for product ${newProduct.productId}", e)
                 _saveStatus.postValue(ListingSaveStatus.Error("Failed to create listing: ${e.message}"))
             }
         }

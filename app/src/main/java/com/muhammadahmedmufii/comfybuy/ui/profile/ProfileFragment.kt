@@ -25,6 +25,11 @@ import com.muhammadahmedmufii.comfybuy.EditProfileActivity
 
 // CHANGE: Renamed from 'ProfileActivity' to 'ProfileFragment' and extends Fragment
 class ProfileFragment : Fragment() {
+    companion object {
+        fun newInstance(): ProfileFragment { // Simple newInstance
+            return ProfileFragment()
+        }
+    }
 
     // UI elements from activity_profile.xml that have click listeners or need data
     private lateinit var layoutPersonalInfo: View // The LinearLayout for Personal Info

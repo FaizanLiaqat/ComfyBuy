@@ -65,7 +65,7 @@
             android:name=".PersonalInfoActivity"
             android:exported="false" />
         <activity
-            android:name=".profile"
+            android:name=".SellerProfileActivity"
             android:exported="false" />
         <activity
             android:name=".Messages"
@@ -81,6 +81,8 @@
         <activity
             android:name=".CreateListingActivity"
             android:exported="false" />
+
+
 
     </application>
 
