@@ -221,36 +221,73 @@ class ProductRepository @Inject constructor(
 
     suspend fun syncProductsToRemote(lastSyncTimestamp: Long) {
         try {
-            val productsToSync = productDao.getProductsToSync(lastSyncTimestamp)
-            Log.d("ProductRepository", "Found ${productsToSync.size} products to sync to remote")
+            val productsToSyncFromRoom = productDao.getProductsToSync(lastSyncTimestamp)
+            Log.i(TAG, "syncProductsToRemote: Found ${productsToSyncFromRoom.size} products in Room potentially needing sync.")
 
-            for (productEntity in productsToSync) {
-                if (productEntity.isDeleted) {
-                    productsCollection.document(productEntity.productId).delete().await()
-                    productImagesRtdbRef.child(productEntity.productId).removeValue().await()
-                    Log.d("ProductRepository", "Deleted product ${productEntity.productId} from remote")
-                    productDao.deleteProductById(productEntity.productId)
+            for (localProductEntity in productsToSyncFromRoom) {
+                if (localProductEntity.isDeleted) {
+                    // Product is marked for deletion locally, propagate deletion to remote
+                    Log.i(TAG, "syncProductsToRemote: Deleting product ${localProductEntity.productId} from remote.")
+                    productsCollection.document(localProductEntity.productId).delete().await()
+                    productImagesRtdbRef.child(localProductEntity.productId).removeValue().await()
+                    productDao.deleteProductById(localProductEntity.productId) // Permanent delete from Room
+                    Log.d(TAG, "syncProductsToRemote: Permanently deleted product ${localProductEntity.productId} from Room.")
                 } else {
-                    val product = productEntity.toDomainModel() // Domain model has text fields
-                    val productMetadata = product.toFirestoreMap() // Map for Firestore
-                    productsCollection.document(productEntity.productId).set(productMetadata, SetOptions.merge()).await()
-                    Log.d("ProductRepository", "Synced product metadata ${productEntity.productId} to Firestore")
+                    // Product is new or updated locally, sync its metadata and images
+                    Log.i(TAG, "syncProductsToRemote: Syncing (create/update) product ${localProductEntity.productId} to remote.")
 
-                    // Sync list of image Base64 strings
-                    val imagesMapForRtdb = productEntity.imageBase64List.mapIndexed { index, base64String ->
-                        index.toString() to base64String
-                    }.toMap()
+                    // Always sync metadata
+                    val domainProduct = localProductEntity.toDomainModel() // Use domain for consistent toFirestoreMap
+                    val firestoreMetadata = domainProduct.toFirestoreMap()
+                    productsCollection.document(localProductEntity.productId).set(firestoreMetadata, SetOptions.merge()).await()
+                    Log.d(TAG, "syncProductsToRemote: Synced metadata for ${localProductEntity.productId} to Firestore.")
 
-                    if (imagesMapForRtdb.isNotEmpty()) {
-                        productImagesRtdbRef.child(productEntity.productId).setValue(imagesMapForRtdb).await()
-                        Log.d("ProductRepository", "Synced ${imagesMapForRtdb.size} product images to RTDB for ${productEntity.productId}")
+                    // Regarding images for products that are NOT new (i.e., timestamp <= lastSyncTimestamp):
+                    // If a product is simply being "pushed" because its timestamp is recent due to a PULL sync,
+                    // and its local imageBase64List is empty (possibly due to a failed RTDB fetch during PULL),
+                    // we should AVOID deleting images from RTDB based on this potentially stale/incomplete local state.
+                    //
+                    // The current `getProductsToSync` fetches items with `timestamp > lastSyncTimestamp` OR `isDeleted = 1`.
+                    // If an item was just pulled by `syncProductsFromRemote`, its timestamp might be updated in Room
+                    // to match Firestore's, potentially making it appear "new" to `getProductsToSync`.
+
+                    // A product's images in RTDB should only be cleared if:
+                    // 1. The product is deleted (handled above).
+                    // 2. The user explicitly removed all images through the UI, and that change was saved to Room
+                    //    (making imageBase64List empty) AND this is a true local modification to be pushed.
+
+                    // Current logic: if local list is empty, it removes from RTDB. This is the risky part.
+                    // To make it safer, we need a way to distinguish "genuinely no images" from
+                    // "failed to sync images into Room during last pull".
+
+                    // SAFER APPROACH (but might not clear RTDB if local images are removed offline and then synced):
+                    // Only push images if the local entity HAS images. Don't do anything to RTDB if local list is empty
+                    // during a general sync push. Explicit image removal should be handled by `updateProduct`.
+                    if (localProductEntity.imageBase64List.isNotEmpty()) {
+                        val imagesMapForRtdb = localProductEntity.imageBase64List.mapIndexed { index, base64String ->
+                            index.toString() to base64String
+                        }.toMap()
+                        productImagesRtdbRef.child(localProductEntity.productId).setValue(imagesMapForRtdb).await()
+                        Log.d(TAG, "syncProductsToRemote: Synced ${imagesMapForRtdb.size} images for ${localProductEntity.productId} to RTDB.")
                     } else {
-                        productImagesRtdbRef.child(productEntity.productId).removeValue().await()
-                        Log.d("ProductRepository", "No local images, removed from RTDB for ${productEntity.productId}")
+                        // If localProductEntity.imageBase64List is empty:
+                        // Current behavior: productImagesRtdbRef.child(productEntity.productId).removeValue().await()
+                        // This is dangerous if the emptiness is due to a failed pull sync.
+                        //
+                        // SAFER: Do not automatically delete RTDB images here.
+                        // Deletion of all images from RTDB should ideally happen when a product's images are
+                        // explicitly cleared by the user via an edit operation that results in an empty
+                        // imageBase64List being saved to Room, and THAT specific update is pushed.
+                        // OR if the product itself is deleted.
+                        Log.w(TAG, "syncProductsToRemote: localProductEntity for ${localProductEntity.productId} has no images. SKIPPING RTDB image modification for this product during general push sync to avoid accidental deletion.")
+                        // If you absolutely must clear RTDB if local is empty, then the pull sync's RTDB image fetch
+                        // must be 100% reliable or have retries.
                     }
                 }
             }
-        } catch (e: Exception) { Log.e("ProductRepository", "Error syncing products to remote", e) }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error syncing products to remote", e)
+        }
     }
 
     // --- NEW: Real-time Flow from Firestore & RTDB ---
