@@ -128,6 +128,7 @@ class ProfileActivity : AppCompatActivity() {
         val navSearch = findViewById<android.widget.LinearLayout>(R.id.navSearch)
         val navMessages = findViewById<android.widget.LinearLayout>(R.id.navMessages)
         val navProfile = findViewById<android.widget.LinearLayout>(R.id.navProfile)
+        //val noti = findViewById<android.widget.LinearLayout>(R.id.layoutNotifications)
 
         navHome.setOnClickListener {
             try {
@@ -158,34 +159,70 @@ class ProfileActivity : AppCompatActivity() {
                 Toast.makeText(this, "Messages screen coming soon!", Toast.LENGTH_SHORT).show()
             }
         }
-    }
 
-    private fun logoutUser() {
-        // Sign out from Firebase Auth
-        auth.signOut()
-        Log.d("ProfileActivity", "Firebase user after signOut: ${auth.currentUser}")
-
-        // Sign out from Google
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(getString(R.string.default_web_client_id))
-            .requestEmail()
-            .requestProfile()
-            .build()
-        val googleSignInClient = GoogleSignIn.getClient(this, gso)
-        googleSignInClient.signOut().addOnCompleteListener(this) { task ->
-            if (task.isSuccessful) {
-                Log.d("ProfileActivity", "Google sign-out successful")
-            } else {
-                Log.e("ProfileActivity", "Google sign-out failed", task.exception)
-            }
+        val notificationsLayout: View = findViewById(R.id.layoutNotifications)
+        notificationsLayout.setOnClickListener {
+            Log.d("ProfileActivity", "Notifications layout clicked")
+            Toast.makeText(this, "Opening Notifications", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, NotificationsActivity::class.java)
+            startActivity(intent)
         }
-
-        // Navigate to login screen
-        Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
-        val intent = Intent(this, login::class.java)
-        Log.d("ProfileActivity", "Starting login activity")
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
-        finish()
     }
+
+//    private fun logoutUser() {
+//        // Sign out from Firebase Auth
+//        auth.signOut()
+//        Log.d("ProfileActivity", "Firebase user after signOut: ${auth.currentUser}")
+//
+//        // Sign out from Google
+//        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+//            .requestIdToken(getString(R.string.default_web_client_id))
+//            .requestEmail()
+//            .requestProfile()
+//            .build()
+//        val googleSignInClient = GoogleSignIn.getClient(this, gso)
+//        googleSignInClient.signOut().addOnCompleteListener(this) { task ->
+//            if (task.isSuccessful) {
+//                Log.d("ProfileActivity", "Google sign-out successful")
+//            } else {
+//                Log.e("ProfileActivity", "Google sign-out failed", task.exception)
+//            }
+//        }
+//
+//        // Navigate to login screen
+//        Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
+//        val intent = Intent(this, login::class.java)
+//        Log.d("ProfileActivity", "Starting login activity")
+//        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+//        startActivity(intent)
+//        finish()
+//    }
+private fun logoutUser() {
+    val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+        .requestIdToken(getString(R.string.default_web_client_id))
+        .requestEmail()
+        .build()
+
+    val googleSignInClient = GoogleSignIn.getClient(this, gso)
+
+    googleSignInClient.signOut().addOnCompleteListener(this) { task ->
+        if (task.isSuccessful) {
+            Log.d("ProfileActivity", "Google sign-out successful")
+
+            // Now sign out from Firebase
+            auth.signOut()
+            Log.d("ProfileActivity", "Firebase user after signOut: ${auth.currentUser}")
+
+            // Navigate to login
+            Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, login::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+        } else {
+            Log.e("ProfileActivity", "Google sign-out failed", task.exception)
+        }
+    }
+}
+
 }
