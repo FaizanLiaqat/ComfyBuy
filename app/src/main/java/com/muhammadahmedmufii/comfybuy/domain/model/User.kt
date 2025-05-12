@@ -14,5 +14,8 @@ data class User(
     var location: String?, // Make var
     var phoneNumber: String? = null, // NEW - Make var
     var gender: String? = null,      // NEW - Make var
+    val followerCount: Int = 0,
+    val followingCount: Int = 0,
+    val productCount: Int = 0,
     var dateOfBirth: String? = null  // NEW - Make var (e.g., "MMMM d, yyyy")
 )

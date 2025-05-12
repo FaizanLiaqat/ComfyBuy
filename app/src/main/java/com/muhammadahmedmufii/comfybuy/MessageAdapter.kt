@@ -7,8 +7,10 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class MessageAdapter(private val messages: List<MessageItem>) :
-    RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
+class MessageAdapter(
+    private val messages: List<MessageItem>,
+    private val onItemClick: (Int) -> Unit
+) : RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -28,6 +30,13 @@ class MessageAdapter(private val messages: List<MessageItem>) :
         private val name: TextView = itemView.findViewById(R.id.tvName)
         private val messageText: TextView = itemView.findViewById(R.id.tvMessage)
         private val time: TextView = itemView.findViewById(R.id.tvTime)
+        private val statusIndicator: ImageView = itemView.findViewById(R.id.ivStatus)
+
+        init {
+            itemView.setOnClickListener {
+                onItemClick(adapterPosition)
+            }
+        }
 
         fun bind(message: MessageItem) {
             name.text = message.name
@@ -35,11 +44,8 @@ class MessageAdapter(private val messages: List<MessageItem>) :
             time.text = message.time
             profilePic.setImageResource(message.profilePic)
 
-            // Set click listener for the entire item
-            itemView.setOnClickListener {
-                // Handle click - open conversation details
-                // You can implement this later
-            }
+            // Show/hide unread message indicator
+            statusIndicator.visibility = if (message.hasUnreadMessages) View.VISIBLE else View.GONE
         }
     }
 }

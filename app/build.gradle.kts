@@ -45,14 +45,12 @@ android {
 }
 
 dependencies {
-
-
     implementation("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.8.0")
 
     // Keep your existing dependencies
-    implementation ("com.github.bumptech.glide:glide:4.16.0") // Note: You have two Glide versions, keep one.
-    implementation ("com.google.android.material:material:1.8.0") // Note: You have this and libs.material, keep one.
-    implementation ("de.hdodenhof:circleimageview:3.1.0") // Note: You have this twice, keep one.
+    implementation ("com.github.bumptech.glide:glide:4.16.0")
+    implementation ("com.google.android.material:material:1.8.0")
+    implementation ("de.hdodenhof:circleimageview:3.1.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material) // Use this one for Material Design components
@@ -73,7 +71,8 @@ dependencies {
     // annotationProcessor ("com.github.bumptech.glide:compiler:4.15.1") // Duplicate - use the version matching your Glide implementation
 
     // Add the correct annotationProcessor for Glide 4.16.0
-    annotationProcessor ("com.github.bumptech.glide:compiler:4.16.0")
+    // CHANGED: Use `kapt` instead of `annotationProcessor` for Kotlin projects using Kapt
+    kapt ("com.github.bumptech.glide:compiler:4.16.0")
 
 
     implementation("com.google.android.gms:play-services-auth:20.7.0") // Use the latest version if needed
@@ -101,5 +100,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
 
     implementation("com.google.code.gson:gson:2.10.1")
+
+
+    implementation ("com.google.dagger:hilt-android:2.44")
+    kapt ("com.google.dagger:hilt-android-compiler:2.44")
 
 }
