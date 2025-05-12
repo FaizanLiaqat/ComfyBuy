@@ -143,12 +143,13 @@
             android:textSize="14sp" />
 
         <RadioButton
-            android:id="@+id/rbClosest"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/closest_to_you"
-            android:textColor="@color/text_primary"
-            android:textSize="14sp" />
+        android:id="@+id/rbPriceHighLow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/price_low_to_high"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp" />
+
     </RadioGroup>
 
     <!-- Product Grid -->
@@ -165,13 +166,6 @@
         app:layout_constraintTop_toBottomOf="@+id/sortRadioGroup"
         tools:listitem="@layout/item_product" />
 
-    <include
-        android:id="@+id/bottomNavContainer"
-        layout="@layout/layout_bottom_navigation"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

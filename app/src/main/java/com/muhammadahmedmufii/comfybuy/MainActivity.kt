@@ -11,6 +11,7 @@ import com.muhammadahmedmufii.comfybuy.ui.home.HomeFragment // Import HomeFragme
 import com.muhammadahmedmufii.comfybuy.ui.messages.MessagesFragment
 import com.muhammadahmedmufii.comfybuy.ui.productdetail.ProductDetailFragment
 import com.muhammadahmedmufii.comfybuy.ui.profile.ProfileFragment
+import com.muhammadahmedmufii.comfybuy.ui.searchresults.SearchResultsFragment
 
 // TODO: Import other Fragment classes as you create them
 // import com.muhammadahmedmufii.comfybuy.ui.searchresults.SearchResultsFragment
@@ -73,10 +74,7 @@ class MainActivity : AppCompatActivity() {
             // TODO: Update UI state of bottom nav icons (e.g., highlight Home)
         }
         findViewById<LinearLayout>(R.id.navSearch).setOnClickListener {
-            // TODO: Replace with SearchResultsFragment when created
-            // replaceFragment(SearchResultsFragment())
-            showPlaceholderToast("Search")
-            // TODO: Update UI state of bottom nav icons
+            replaceFragment(SearchResultsFragment.newInstance(null)) // Pass null or an initial query
         }
         findViewById<LinearLayout>(R.id.navSell).setOnClickListener {
             val intent = Intent(this, CreateListingActivity::class.java)
@@ -145,5 +143,10 @@ class MainActivity : AppCompatActivity() {
         // If ChatActivity also becomes ChatFragment:
         // val chatFragment = ChatFragment.newInstance(opponentUserId, opponentName, opponentProfilePicResId)
         // replaceFragment(chatFragment, "chat")
+    }
+
+    fun navigateToSearch(query: String?) {
+        Log.d(TAG, "Navigating to SearchResultsFragment with query: $query")
+        replaceFragment(SearchResultsFragment.newInstance(query))
     }
 }

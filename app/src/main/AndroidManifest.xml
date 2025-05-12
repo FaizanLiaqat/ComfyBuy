@@ -38,7 +38,7 @@
             android:name=".signup"
             android:exported="false" />
         <activity
-            android:name=".SearchResultsActivity"
+            android:name=".ui.searchresults.SearchResultsFragment"
             android:exported="false" />
         <activity
             android:name=".SettingsActivity"
