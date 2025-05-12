@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- res/layout/activity_seller_profile.xml -->
 <androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/scrollView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FFFFFF"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    tools:context=".SellerProfileActivity"> <!-- Updated context -->
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -14,29 +17,30 @@
         android:orientation="vertical"
         android:paddingBottom="16dp">
 
-        <!-- HEADER: avatar + camera icon -->
+        <!-- Optional: Add a simple Toolbar for back navigation -->
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbarSellerProfile"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="#FF6B6B"
+            app:titleTextColor="@android:color/white"
+            app:navigationIcon="@drawable/ic_back" /> <!-- Add ic_back drawable if white -->
+
+        <!-- HEADER: avatar -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="150dp"
-            android:paddingTop="24dp">
+            android:paddingTop="16dp"> <!-- Adjusted padding -->
 
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/avatar"
                 android:layout_width="100dp"
                 android:layout_height="100dp"
                 android:layout_centerHorizontal="true"
-                android:src="@drawable/ic_apple"
+                tools:src="@drawable/avatar_placeholder"
                 app:civ_border_width="0dp" />
 
-            <de.hdodenhof.circleimageview.CircleImageView
-                android:id="@+id/cameraIcon"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_alignEnd="@id/avatar"
-                android:layout_alignBottom="@id/avatar"
-                android:layout_marginEnd="4dp"
-                android:layout_marginBottom="4dp"
-                android:src="@drawable/ic_google" />
+            <!-- REMOVED cameraIcon -->
         </RelativeLayout>
 
         <!-- NAME & SUBTITLE -->
@@ -51,7 +55,7 @@
                 android:id="@+id/name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Sarah Mitchell"
+                tools:text="Sarah Mitchell"
                 android:textSize="20sp"
                 android:textColor="#000000"
                 android:fontFamily="sans-serif-medium" />
@@ -60,30 +64,13 @@
                 android:id="@+id/subtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Fashion enthusiast and vintage collector"
+                tools:text="Fashion enthusiast and vintage collector"
                 android:textSize="14sp"
                 android:textColor="#6D6D6D"
                 android:layout_marginTop="4dp" />
         </LinearLayout>
 
-        <!-- EDIT PROFILE BUTTON -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
-            android:paddingTop="12dp"
-            android:paddingBottom="16dp">
-
-            <TextView
-                android:id="@+id/btnEditProfile"
-                style="?android:attr/borderlessButtonStyle"
-                android:layout_width="150dp"
-                android:layout_height="36dp"
-                android:text="Edit Profile"
-                android:textSize="14sp"
-                android:textColor="#FF6B6B"
-                android:background="@drawable/bg_edit_profile" />
-        </LinearLayout>
+        <!-- REMOVED EDIT PROFILE BUTTON SECTION -->
 
         <!-- STATS: Listings / Followers / Following -->
         <LinearLayout
@@ -91,10 +78,9 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:weightSum="3"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
+            android:paddingVertical="16dp"
             android:background="@drawable/divider_top_bottom">
-
+            <!-- ... (Stats TextViews remain the same) ... -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -106,7 +92,7 @@
                     android:id="@+id/countListings"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="12"
+                    android:text="0"
                     android:textSize="16sp"
                     android:textColor="#000000"
                     android:fontFamily="sans-serif-medium" />
@@ -131,7 +117,7 @@
                     android:id="@+id/countFollowers"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="258"
+                    android:text="-"
                     android:textSize="16sp"
                     android:textColor="#000000"
                     android:fontFamily="sans-serif-medium" />
@@ -156,7 +142,7 @@
                     android:id="@+id/countFollowing"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="184"
+                    android:text="-"
                     android:textSize="16sp"
                     android:textColor="#000000"
                     android:fontFamily="sans-serif-medium" />
@@ -172,6 +158,7 @@
         </LinearLayout>
 
         <!-- TABS: Listings | Favorites | Reviews -->
+        <!-- ... (Tabs remain the same) ... -->
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="48dp"
@@ -255,6 +242,7 @@
                 </LinearLayout>
             </LinearLayout>
         </HorizontalScrollView>
+
 
         <!-- PRODUCT GRID -->
         <androidx.recyclerview.widget.RecyclerView

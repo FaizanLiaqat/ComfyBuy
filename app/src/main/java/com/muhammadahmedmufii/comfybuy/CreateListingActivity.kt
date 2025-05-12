@@ -31,7 +31,7 @@ import com.muhammadahmedmufii.comfybuy.ui.createlisting.ListingSaveStatus
 import java.io.IOException
 
 class CreateListingActivity : AppCompatActivity() {
-
+    private val TAG = "CreateListingActivity"
     private lateinit var viewModel: CreateListingViewModel
 
     private lateinit var addPhotosArea: FrameLayout // Changed to FrameLayout for consistency
@@ -88,22 +88,43 @@ class CreateListingActivity : AppCompatActivity() {
                     val data: Intent? = result.data
                     selectedImageUris.clear() // Or allow appending up to a limit
                     selectedBitmaps.clear()
-
+                    var conversionFailed = false
                     if (data?.clipData != null) { // Multiple images selected
                         val clipData = data.clipData!!
                         val count = clipData.itemCount.coerceAtMost(8) // Limit to 8
+                        Log.d(TAG, "Multiple images selected. Count: $count")
                         for (i in 0 until count) {
                             val uri = clipData.getItemAt(i).uri
                             selectedImageUris.add(uri)
-                            uriToBitmap(uri)?.let { selectedBitmaps.add(it) }
+                            uriToBitmap(uri)?.let {
+                                selectedBitmaps.add(it)
+                                Log.d(TAG, "Converted URI to Bitmap: $uri -> Success")
+                            } ?: run {
+                                Log.e(TAG, "Failed to convert URI to Bitmap: $uri")
+                                conversionFailed = true
+                            }
                         }
                     } else if (data?.data != null) { // Single image selected
+
                         val uri = data.data!!
+                        Log.e(TAG, "Failed to convert URI to Bitmap: $uri")
                         selectedImageUris.add(uri)
-                        uriToBitmap(uri)?.let { selectedBitmaps.add(it) }
+                        uriToBitmap(uri)?.let {
+                            selectedBitmaps.add(it)
+                            Log.d(TAG, "Converted URI to Bitmap: $uri -> Success")
+                        } ?: run {
+                            Log.e(TAG, "Failed to convert URI to Bitmap: $uri")
+                            conversionFailed = true
+                        }
                     }
                     updateThumbnailsUi()
+                    if (conversionFailed) {
+                        Toast.makeText(this, "Some images failed to load.", Toast.LENGTH_SHORT).show()
+                    }
+                    Log.d(TAG, "Final selectedBitmaps count: ${selectedBitmaps.size}")
 
+                }else {
+                    Log.d(TAG, "Image selection cancelled or failed.")
                 }
             }
 
@@ -152,20 +173,21 @@ class CreateListingActivity : AppCompatActivity() {
 
 
     private fun uriToBitmap(uri: Uri): Bitmap? {
+        Log.d(TAG, "uriToBitmap: Attempting to convert URI: $uri")
         return try {
-            // Resize bitmap here to avoid large Base64 strings
             val originalBitmap = if (Build.VERSION.SDK_INT < 28) {
                 MediaStore.Images.Media.getBitmap(this.contentResolver, uri)
             } else {
                 val source = ImageDecoder.createSource(this.contentResolver, uri)
                 ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
-                    decoder.setTargetSize(1024, 1024) // Resize to max 1024x1024, adjust as needed
+                    decoder.setTargetSize(1024, 1024)
                     decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
                 }
             }
-            // Further compression can be done in UserRepository before Base64 encoding
+            Log.d(TAG, "uriToBitmap: Conversion successful for URI: $uri, Bitmap: ${originalBitmap.width}x${originalBitmap.height}")
             originalBitmap
         } catch (e: Exception) {
+            Log.e(TAG, "uriToBitmap: Error converting URI: $uri", e)
             e.printStackTrace()
             null
         }
@@ -243,15 +265,18 @@ class CreateListingActivity : AppCompatActivity() {
 
         if (title.isEmpty() || category.isEmpty() || price.isEmpty() || selectedBitmaps.isEmpty()) {
             Toast.makeText(this, "Please fill all fields and add at least one photo.", Toast.LENGTH_LONG).show()
+            Log.w(TAG, "Post validation failed: Title=$title, Category=$category, Price=$price, Bitmaps=${selectedBitmaps.size}")
             return
         }
 
-        Log.d("CreateListing", "Posting: Title: $title, Images: ${selectedBitmaps.size}")
+        Log.i(TAG, "postListing: Posting with Title: $title, Category: $category, Condition: $condition, Price: $price, Desc: $description, Location: $location, Images: ${selectedBitmaps.size}")
+
         viewModel.createListing(title, category, condition, price, description, location, selectedBitmaps) // Pass list of bitmaps
     }
 
     private fun observeViewModel() {
         viewModel.saveStatus.observe(this) { status ->
+            Log.d(TAG, "SaveStatus observed: $status")
             when (status) {
                 is ListingSaveStatus.Loading -> {
                     btnPost.isEnabled = false

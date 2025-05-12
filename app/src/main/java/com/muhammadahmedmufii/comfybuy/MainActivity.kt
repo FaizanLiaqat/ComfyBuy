@@ -2,6 +2,7 @@ package com.muhammadahmedmufii.comfybuy // Use your main package name
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.LinearLayout // Import LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -18,6 +19,11 @@ import com.muhammadahmedmufii.comfybuy.ui.profile.ProfileFragment
 
 
 class MainActivity : AppCompatActivity() {
+    companion object {
+        const val ACTION_SHOW_PRODUCT_DETAIL = "com.muhammadahmedmufii.comfybuy.ACTION_SHOW_PRODUCT_DETAIL"
+        const val EXTRA_PRODUCT_ID_TO_SHOW = "extra_product_id_to_show"
+    }
+    private val TAG = "MainActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,15 +31,39 @@ class MainActivity : AppCompatActivity() {
 
         // Set up initial fragment
         if (savedInstanceState == null) {
-            // Display the Home Fragment initially when the activity is first created
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, HomeFragment()) // Use the container ID from activity_main.xml
-                .commit()
+            // Check intent that started this activity first
+            handleIntent(intent) // Handle intent that might have started MainActivity
         }
 
         setupBottomNavigationListeners()
         // TODO: Handle potential intent data if MainActivity is launched with a specific tab in mind
     }
+
+    private fun handleIntent(intent: Intent?) {
+        if (intent?.action == ACTION_SHOW_PRODUCT_DETAIL) {
+            val productId = intent.getStringExtra(EXTRA_PRODUCT_ID_TO_SHOW)
+            if (productId != null) {
+                Log.d(TAG, "Handling intent to show product detail for ID: $productId")
+                navigateToProductDetail(productId)
+            } else {
+                Log.w(TAG, "ACTION_SHOW_PRODUCT_DETAIL received but no EXTRA_PRODUCT_ID_TO_SHOW found.")
+                // Fallback to home if product ID is missing
+                if (supportFragmentManager.findFragmentById(R.id.fragment_container) == null) {
+                    replaceFragment(HomeFragment.newInstance())
+                }
+            }
+        } else {
+            // Default action if no specific intent action (e.g., on first launch)
+            if (supportFragmentManager.findFragmentById(R.id.fragment_container) == null) {
+                Log.d(TAG, "No specific action in intent, showing HomeFragment.")
+                replaceFragment(HomeFragment.newInstance()) // Assuming HomeFragment has newInstance()
+            }
+        }
+    }
+
+
+    // New method for navigating to SellerProfile (which is now SellerProfileActivity)
+
 
     private fun setupBottomNavigationListeners() {
         // Find the LinearLayouts from the included layout_bottom_navigation.xml
@@ -85,6 +115,19 @@ class MainActivity : AppCompatActivity() {
             .addToBackStack("productDetail") // So back button works correctly
             .commit()
     }
-    // TODO: You might need methods here to navigate to specific fragments from other parts of the app
-    // Example: fun navigateToSearch(query: String) { replaceFragment(SearchResultsFragment.newInstance(query)) }
+
+    fun navigateToSellerProfile(sellerId: String) {
+        Log.d(TAG, "Navigating to SellerProfileActivity for sellerId: $sellerId")
+        val intent = Intent(this, SellerProfileActivity::class.java).apply {
+            putExtra(SellerProfileActivity.EXTRA_SELLER_ID, sellerId)
+        }
+        startActivity(intent)
+    }
+
+    // This method is specifically to bring the logged-in user's profile tab to the front
+    fun navigateToMainProfileTab() {
+        Log.d(TAG, "navigateToMainProfileTab called - replacing with ProfileFragment")
+        replaceFragment(ProfileFragment.newInstance()) // <<< USE YOUR ProfileFragment
+        // TODO: Update bottom navigation visual state to highlight profile
+    }
 }

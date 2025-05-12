@@ -1,5 +1,6 @@
 package com.muhammadahmedmufii.comfybuy.ui.productdetail // Or your fragment package
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -14,10 +15,14 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
+import com.google.firebase.auth.FirebaseAuth
+import com.muhammadahmedmufii.comfybuy.MainActivity
 import com.muhammadahmedmufii.comfybuy.R
+import com.muhammadahmedmufii.comfybuy.SellerProfileActivity
 import de.hdodenhof.circleimageview.CircleImageView
 
 class ProductDetailFragment : Fragment() {
+    private val TAG = "ProductDetailFrag"
 
     private lateinit var viewModel: ProductDetailViewModel
     private lateinit var imageViewPager: ViewPager2
@@ -121,7 +126,7 @@ class ProductDetailFragment : Fragment() {
     private fun observeViewModel() {
         viewModel.product.observe(viewLifecycleOwner) { product -> // Use viewLifecycleOwner
             product?.let {
-                Log.d("ProductDetailFragment", "Product observed: ${it.title}, Images: ${it.imageBitmaps.size}")
+                Log.i(TAG, "Product observed: ${it.title}, Total ImageBitmaps: ${it.imageBitmaps.size}")
                 titleText.text = it.title // Update the main product title TextView
                 // Update the title in the custom toolbar if you have one inside fragment_product_detail.xml
                 // view?.findViewById<TextView>(R.id.toolbarProductTitle)?.text = it.title
@@ -133,6 +138,7 @@ class ProductDetailFragment : Fragment() {
                 if (it.imageBitmaps.isNotEmpty()) {
                     imageSliderAdapter.submitList(it.imageBitmaps)
                     imageViewPager.visibility = View.VISIBLE
+                    Log.d(TAG, "First bitmap for detail view (width: ${it.imageBitmaps[0].width})")
                     // Optional: tabLayoutIndicator.visibility = if (it.imageBitmaps.size > 1) View.VISIBLE else View.GONE
                 } else {
                     imageSliderAdapter.submitList(emptyList())
@@ -193,6 +199,23 @@ class ProductDetailFragment : Fragment() {
                 Toast.makeText(requireContext(), "Seller information not available for chat", Toast.LENGTH_SHORT).show()
             }
         }
+
+        val sellerClickListener = View.OnClickListener {
+            viewModel.seller.value?.userId?.let { sellerId ->
+                val currentAuthUserId = FirebaseAuth.getInstance().currentUser?.uid
+                if (sellerId == currentAuthUserId) {
+                    // It's the current user's own product, navigate to their main profile tab in MainActivity
+                    Log.d("ProductDetailFragment", "Clicked on own seller info, navigating to main Profile tab.")
+                    (activity as? MainActivity)?.navigateToMainProfileTab() // You need this in MainActivity
+                } else {
+                    // It's another user's product, navigate to SellerProfileActivity via MainActivity method
+                    Log.d("ProductDetailFragment", "Seller info clicked, navigating to SellerProfileActivity for user: $sellerId")
+                    (activity as? MainActivity)?.navigateToSellerProfile(sellerId)
+                }
+            } ?: Toast.makeText(requireContext(), "Seller ID not available.", Toast.LENGTH_SHORT).show()
+        }
+        sellerImage.setOnClickListener(sellerClickListener)
+        sellerName.setOnClickListener(sellerClickListener)
     }
 
 

@@ -25,7 +25,7 @@ interface ProductDao {
     suspend fun deleteProductById(productId: String)
 
     // Get all products
-    @Query("SELECT * FROM products WHERE isDeleted = 0") // Only get products not marked as deleted
+    @Query("SELECT * FROM products WHERE isDeleted = 0 ORDER BY timestamp ASC") // Only get products not marked as deleted
     fun getAllProducts(): Flow<List<ProductEntity>> // Use Flow to observe changes
 
     // Get products by user ID
