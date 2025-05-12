@@ -27,12 +27,12 @@ class CreateListingViewModel(application: Application) : AndroidViewModel(applic
     val saveStatus: LiveData<ListingSaveStatus> get() = _saveStatus
 
     init {
-        val db = AppDatabase.getDatabase(application)
+//        val db = AppDatabase.getDatabase(application)
         firebaseAuth = FirebaseAuth.getInstance()
-        val firestore = FirebaseFirestore.getInstance()
+//        val firestore = FirebaseFirestore.getInstance()
         val rtdb = FirebaseDatabase.getInstance("https://messamfaizanahmed-default-rtdb.asia-southeast1.firebasedatabase.app")
-        productRepository = ProductRepository(db.productDao(), firestore, rtdb)
-        Log.d(TAG, "ViewModel initialized.")
+        productRepository = ProductRepository(rtdb, firebaseAuth)
+        Log.d(TAG, "ViewModel initialized with RTDB-only ProductRepository.")
     }
 
     fun createListing(
@@ -42,7 +42,7 @@ class CreateListingViewModel(application: Application) : AndroidViewModel(applic
         price: String,
         description: String?,
         location: String?,
-        imageBitmaps: List<Bitmap> // Changed to List<Bitmap>
+        imageBitmaps: List<Bitmap>
     ) {
         _saveStatus.value = ListingSaveStatus.Loading
         val currentUserId = firebaseAuth.currentUser?.uid
@@ -53,6 +53,7 @@ class CreateListingViewModel(application: Application) : AndroidViewModel(applic
         }
 
         val productId = UUID.randomUUID().toString()
+        val currentTimestamp = System.currentTimeMillis() // Ensure consistent timestamp
 
         val newProduct = Product(
             productId = productId,
@@ -61,15 +62,16 @@ class CreateListingViewModel(application: Application) : AndroidViewModel(applic
             description = description,
             price = price,
             location = location,
-            category = category, // Assign category
-            condition = condition, // Assign condition
-            imageBitmaps = imageBitmaps // Assign list of bitmaps
+            category = category,
+            condition = condition,
+            imageBitmaps = imageBitmaps,
+            timestamp = currentTimestamp // Use consistent timestamp
         )
         Log.i(TAG, "createListing: Attempting to save product via repository. Product ID: ${newProduct.productId}, Image count: ${newProduct.imageBitmaps.size}")
         viewModelScope.launch {
             try {
-                Log.d("CreateListingVM", "Saving product with ${imageBitmaps.size} images: $newProduct")
-                productRepository.saveProduct(newProduct) // Pass the product which contains the image list
+                // Log.d("CreateListingVM", "Saving product with ${imageBitmaps.size} images: $newProduct") // Redundant with above
+                productRepository.saveProduct(newProduct)
                 Log.i(TAG, "createListing: productRepository.saveProduct call successful for ${newProduct.productId}")
                 _saveStatus.postValue(ListingSaveStatus.Success("Listing created successfully!"))
             } catch (e: Exception) {

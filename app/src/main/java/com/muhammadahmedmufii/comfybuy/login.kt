@@ -51,6 +51,7 @@ class login: AppCompatActivity() {
     private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
 
+
     // Coroutine scope for launching suspend functions
     private val activityScope = CoroutineScope(Dispatchers.Main)
 
@@ -62,14 +63,14 @@ class login: AppCompatActivity() {
 
         // Initialize Firebase Auth and Firestore
         auth = FirebaseAuth.getInstance()
-        db = Firebase.firestore
+//        db = Firebase.firestore
 
-        // Initialize UserRepository (Manual dependency injection for now)
-        val database = AppDatabase.getDatabase(applicationContext)
-        val userDao = database.userDao()
+//        // Initialize UserRepository (Manual dependency injection for now)
+//        val database = AppDatabase.getDatabase(applicationContext)
+//        val userDao = database.userDao()
         val firebaseDatabase = FirebaseDatabase.getInstance() // Get RTDB instance
 
-        userRepository = UserRepository(userDao, auth, db, firebaseDatabase)
+        userRepository = UserRepository( auth,  firebaseDatabase)
 
 
         initViews()
@@ -157,15 +158,17 @@ class login: AppCompatActivity() {
 
                     user?.let { firebaseUser ->
                         // Check if new user and save data (Firestore part)
-                        checkIfNewUserAndSaveData(firebaseUser)
-
-                        // *** NEW: Trigger data fetch from Firestore to Room after successful auth ***
                         activityScope.launch {
                             try {
-                                Log.d("Login", "Triggering fetchAndSaveUser for Google user: ${firebaseUser.uid}")
-                                userRepository.fetchAndSaveUser(firebaseUser.uid)
-                                Log.d("Login", "fetchAndSaveUser completed for Google user.")
-                            } catch (e: Exception) {
+                                // This will now ensure user exists in RTDB
+                                userRepository.fetchUserAndEnsureExistsInRtdb(
+                                    firebaseUser.uid,
+                                    firebaseUser.email,
+                                    firebaseUser.displayName
+                                )
+                                Log.d("Login", "fetchUserAndEnsureExistsInRtdb completed for Google user.")
+                                // No separate fetchAndSaveUser to Room needed now
+                            } catch (e: Exception){
                                 Log.e("Login", "Error fetching and saving user data after Google sign-in", e)
                             }
                         }
@@ -191,41 +194,41 @@ class login: AppCompatActivity() {
     // This function saves data to Firestore *if* the document doesn't exist.
     // It's called after both email/password and Google sign-up/in.
     // The fetchAndSaveUser call in the auth success callbacks ensures it gets synced to Room.
-    private fun checkIfNewUserAndSaveData(firebaseUser: com.google.firebase.auth.FirebaseUser) {
-        // Check Firestore for existing user data
-        db.collection("users").document(firebaseUser.uid).get()
-            .addOnSuccessListener { documentSnapshot ->
-                if (!documentSnapshot.exists()) {
-                    Log.d("Firestore", "User data does not exist in Firestore for UID: ${firebaseUser.uid}, saving basic data.")
-                    // User data does not exist in Firestore, save it
-                    val userMap = hashMapOf(
-                        "userId" to firebaseUser.uid,
-                        "fullName" to firebaseUser.displayName,
-                        "email" to firebaseUser.email,
-                        "username" to null,
-                        "bio" to null,
-                        "location" to null,
-                        "timestamp" to System.currentTimeMillis() // CRITICAL: Add timestamp
-                    )
-
-                    db.collection("users").document(firebaseUser.uid).set(userMap)
-                        .addOnSuccessListener {
-                            Log.d("Firestore", "New Google user data successfully written to Firestore!")
-                            // No need to call fetchAndSaveUser here again, it's called in the auth success callback
-                        }
-                        .addOnFailureListener { e ->
-                            Log.w("Firestore", "Error writing new Google user data to Firestore", e)
-                            // TODO: Decide how to handle this error - maybe log it and allow login anyway?
-                        }
-                } else {
-                    Log.d("Firestore", "User data already exists in Firestore for UID: ${firebaseUser.uid}")
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.w("Firestore", "Error checking for existing user data in Firestore", e)
-                // TODO: Decide how to handle this error - maybe log it and allow login anyway?
-            }
-    }
+//    private fun checkIfNewUserAndSaveData(firebaseUser: com.google.firebase.auth.FirebaseUser) {
+//        // Check Firestore for existing user data
+//        db.collection("users").document(firebaseUser.uid).get()
+//            .addOnSuccessListener { documentSnapshot ->
+//                if (!documentSnapshot.exists()) {
+//                    Log.d("Firestore", "User data does not exist in Firestore for UID: ${firebaseUser.uid}, saving basic data.")
+//                    // User data does not exist in Firestore, save it
+//                    val userMap = hashMapOf(
+//                        "userId" to firebaseUser.uid,
+//                        "fullName" to firebaseUser.displayName,
+//                        "email" to firebaseUser.email,
+//                        "username" to null,
+//                        "bio" to null,
+//                        "location" to null,
+//                        "timestamp" to System.currentTimeMillis() // CRITICAL: Add timestamp
+//                    )
+//
+//                    db.collection("users").document(firebaseUser.uid).set(userMap)
+//                        .addOnSuccessListener {
+//                            Log.d("Firestore", "New Google user data successfully written to Firestore!")
+//                            // No need to call fetchAndSaveUser here again, it's called in the auth success callback
+//                        }
+//                        .addOnFailureListener { e ->
+//                            Log.w("Firestore", "Error writing new Google user data to Firestore", e)
+//                            // TODO: Decide how to handle this error - maybe log it and allow login anyway?
+//                        }
+//                } else {
+//                    Log.d("Firestore", "User data already exists in Firestore for UID: ${firebaseUser.uid}")
+//                }
+//            }
+//            .addOnFailureListener { e ->
+//                Log.w("Firestore", "Error checking for existing user data in Firestore", e)
+//                // TODO: Decide how to handle this error - maybe log it and allow login anyway?
+//            }
+//    }
 
 
     private fun performLogin() {
@@ -257,17 +260,15 @@ class login: AppCompatActivity() {
                 if (task.isSuccessful) {
                     Log.d("Login", "signInWithEmail:success")
                     val user = auth.currentUser
-
                     user?.let { firebaseUser ->
-                        // Check if new user and save data (Firestore part - might be redundant if already exists)
-                        checkIfNewUserAndSaveData(firebaseUser)
-
-                        // *** NEW: Trigger data fetch from Firestore to Room after successful auth ***
                         activityScope.launch {
                             try {
-                                Log.d("Login", "Triggering fetchAndSaveUser for email/password user: ${firebaseUser.uid}")
-                                userRepository.fetchAndSaveUser(firebaseUser.uid)
-                                Log.d("Login", "fetchAndSaveUser completed for email/password user.")
+                                userRepository.fetchUserAndEnsureExistsInRtdb(
+                                    firebaseUser.uid,
+                                    firebaseUser.email,
+                                    firebaseUser.displayName // For email/pass, displayName might be null initially
+                                )
+                                Log.d("Login", "fetchUserAndEnsureExistsInRtdb completed for email/password user.")
                             } catch (e: Exception) {
                                 Log.e("Login", "Error fetching and saving user data after email/password sign-in", e)
                             }

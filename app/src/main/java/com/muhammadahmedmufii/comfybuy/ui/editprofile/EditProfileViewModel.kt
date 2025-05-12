@@ -33,13 +33,13 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
 
     init {
         Log.d("EditProfileViewModel", "init: ViewModel initialized")
-        val database = AppDatabase.getDatabase(application)
-        val userDao = database.userDao()
+//        val database = AppDatabase.getDatabase(application)
+//        val userDao = database.userDao()
         firebaseAuth = FirebaseAuth.getInstance() // Initialize FirebaseAuth
         val firestore = FirebaseFirestore.getInstance()
         // Ensure RTDB URL is correct here
         val firebaseDatabase = FirebaseDatabase.getInstance("https://messamfaizanahmed-default-rtdb.asia-southeast1.firebasedatabase.app")
-        userRepository = UserRepository(userDao, firebaseAuth, firestore, firebaseDatabase)
+        userRepository = UserRepository(firebaseAuth, firebaseDatabase)
 
         loadCurrentUser()
     }
@@ -64,7 +64,7 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
                         // Perform fetch in a separate job but ensure isLoadingProfile is handled correctly
                         viewModelScope.launch(Dispatchers.IO) { // Fetch on IO thread
                             try {
-                                userRepository.fetchAndSaveUser(userIdToFetch)
+                                userRepository.getUserById(userIdToFetch)
                                 Log.d("EditProfileViewModel", "loadCurrentUser: fetchAndSaveUser completed for $userIdToFetch.")
                                 // After successful fetch, the original getCurrentUser().collectLatest
                                 // should emit the new user from Room, which will then set

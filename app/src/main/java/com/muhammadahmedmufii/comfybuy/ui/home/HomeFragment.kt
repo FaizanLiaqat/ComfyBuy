@@ -117,20 +117,22 @@ class HomeFragment : Fragment() {
         recycler.adapter = productAdapter // Set the adapter to the RecyclerView
     }
 
-    private fun observeViewModel() {
+   private fun observeViewModel() { // <<< UNCOMMENTED AND KEPT YOUR LOGGING >>>
         homeViewModel.products.observe(viewLifecycleOwner) { productList ->
             Log.i(TAG, "Products LiveData observer triggered. List size: ${productList.size}")
             if (productList.isNotEmpty()) {
-                val firstProd = productList[0]
-                Log.d(TAG, "First product in list: ${firstProd.title}, Image count: ${firstProd.imageBitmaps.size}")
-                if (firstProd.imageBitmaps.isNotEmpty()) {
-                    Log.d(TAG, "First product's first bitmap is present: ${firstProd.imageBitmaps[0] != null} (Width: ${firstProd.imageBitmaps[0]?.width})")
-                } else {
-                    Log.d(TAG, "First product '${firstProd.title}' has no bitmaps in its list.")
+                // Log details for a few products to check image counts
+                productList.take(3).forEachIndexed { index, product ->
+                    Log.d(TAG, "Product[$index]: ${product.title}, Image count: ${product.imageBitmaps.size}")
+                    if (product.imageBitmaps.isNotEmpty()) {
+                        Log.d(TAG, "Product[$index]: First bitmap valid: ${product.imageBitmaps[0] != null} (Width: ${product.imageBitmaps[0]?.width})")
+                    } else {
+                         Log.d(TAG, "Product[$index]: '${product.title}' has no bitmaps.")
+                    }
                 }
             }
             productAdapter.submitList(productList)
-            Log.d(TAG, "Submitted list to adapter. Current adapter item count: ${productAdapter.itemCount}")
+            Log.d(TAG, "Submitted list to adapter. Adapter current itemCount: ${productAdapter.itemCount}")
         }
     }
 

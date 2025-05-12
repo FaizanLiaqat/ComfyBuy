@@ -4,12 +4,17 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
 import android.util.Log
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query // For Query.Direction
 import com.google.firebase.firestore.SetOptions
 import com.muhammadahmedmufii.comfybuy.data.local.ProductDao
 import com.muhammadahmedmufii.comfybuy.data.local.ProductEntity
+import com.muhammadahmedmufii.comfybuy.data.model.RtdbProduct
 import com.muhammadahmedmufii.comfybuy.domain.model.Product
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi // For callbackFlow
@@ -17,6 +22,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -25,383 +31,279 @@ import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 
 class ProductRepository @Inject constructor(
-    private val productDao: ProductDao,
-    private val firestore: FirebaseFirestore,
-    private val realtimeDatabase: FirebaseDatabase
+//    private val productDao: ProductDao,
+//    private val firestore: FirebaseFirestore,
+    private val realtimeDatabase: FirebaseDatabase,
+    private val firebaseAuth: FirebaseAuth
 ) {
     private val TAG = "ProductRepo" // Logging Tag
-    private val productsCollection = firestore.collection("products")
-    private val productImagesRtdbRef = realtimeDatabase.getReference("product_images_multiple") // New path for list of images
-
+//    private val productsCollection = firestore.collection("products")
+    private val productsRtdbRef = realtimeDatabase.getReference("products")
     // --- Base64 Conversion Helpers (bitmapToBase64, base64ToBitmap) remain the same ---
     private fun bitmapToBase64(bitmap: Bitmap?): String? {
-        if (bitmap == null) {
-            Log.w(TAG, "bitmapToBase64: Received null bitmap.")
-            return null
-        }
+        if (bitmap == null) { Log.w(TAG, "bitmapToBase64: Received null bitmap."); return null }
         return try {
-            val byteArrayOutputStream = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 75, byteArrayOutputStream) // Quality to 75
-            val byteArray = byteArrayOutputStream.toByteArray()
-            Base64.encodeToString(byteArray, Base64.NO_WRAP)
+            val baos = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 75, baos) // Quality 75
+            val byteArray = baos.toByteArray()
             val base64String = Base64.encodeToString(byteArray, Base64.NO_WRAP)
-            Log.d(TAG, "bitmapToBase64: Converted bitmap (${bitmap.width}x${bitmap.height}) to Base64 string (length: ${base64String.length})")
+            Log.d(TAG, "bitmapToBase64: Converted bitmap (${bitmap.width}x${bitmap.height}) to Base64 (len: ${base64String.length})")
             base64String
-        } catch (e: Exception) {
-            Log.e(TAG, "bitmapToBase64: Error converting bitmap", e)
-            null
-        }
+        } catch (e: Exception) { Log.e(TAG, "bitmapToBase64: Error converting bitmap", e); null }
     }
 
     private fun base64ToBitmap(base64String: String?): Bitmap? {
-        if (base64String == null) {
-            Log.w(TAG, "base64ToBitmap: Received null or empty Base64 string.")
-            return null
-        }
+        if (base64String.isNullOrEmpty()) { Log.w(TAG, "base64ToBitmap: Received null/empty string."); return null }
         return try {
             val decodedBytes = Base64.decode(base64String, Base64.DEFAULT)
             val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-            if (bitmap != null) {
-                Log.d(TAG, "base64ToBitmap: Converted Base64 (length: ${base64String.length}) to Bitmap (${bitmap.width}x${bitmap.height})")
-            } else {
-                Log.e(TAG, "base64ToBitmap: BitmapFactory.decodeByteArray returned null for Base64 (length: ${base64String.length})")
-            }
+            if (bitmap != null) Log.d(TAG, "base64ToBitmap: Converted Base64 (len: ${base64String.length}) to Bitmap (${bitmap.width}x${bitmap.height})")
+            else Log.e(TAG, "base64ToBitmap: decodeByteArray null for Base64 (len: ${base64String.length})")
             bitmap
-        } catch (e: IllegalArgumentException) { // Catch specific Base64 decode errors
-            Log.e(TAG, "base64ToBitmap: IllegalArgumentException - Invalid Base64 string (length: ${base64String.length})", e)
-            null
-        } catch (e: Exception) {
-            Log.e(TAG, "base64ToBitmap: Generic error converting Base64 (length: ${base64String.length})", e)
-            null
-        }
+        } catch (e: Exception) { Log.e(TAG, "base64ToBitmap: Error for Base64 (len: ${base64String?.length})", e); null }
     }
 
     // getAllProducts, getProductById, getUserProducts structure is fine,
     // but they will benefit from the updated toDomainModel()
 
-    fun getAllProducts(): Flow<List<Product>> {
-        return productDao.getAllProducts().map { entities ->
-            entities.map { it.toDomainModel() }
-        }
-    }
+//    fun getAllProducts(): Flow<List<Product>> {
+//        return productDao.getAllProducts().map { entities ->
+//            entities.map { it.toDomainModel() }
+//        }
+//    }
+//
+//    fun getProductById(productId: String): Flow<Product?> {
+//        return productDao.getProductById(productId).map { entity ->
+//            entity?.toDomainModel()
+//        }
+//    }
+//
+//    fun getUserProducts(userId: String): Flow<List<Product>> {
+//        return productDao.getUserProducts(userId).map { entities ->
+//            entities.map { it.toDomainModel() }
+//        }
+//    }
 
-    fun getProductById(productId: String): Flow<Product?> {
-        return productDao.getProductById(productId).map { entity ->
-            entity?.toDomainModel()
-        }
-    }
+    private fun RtdbProduct.toDomainModel(): Product {
+        val imageBase64List = this.images ?: emptyList()
 
-    fun getUserProducts(userId: String): Flow<List<Product>> {
-        return productDao.getUserProducts(userId).map { entities ->
-            entities.map { it.toDomainModel() }
-        }
+        return Product(
+            productId = this.productId,
+            ownerId = this.ownerId,
+            title = this.title,
+            description = this.description,
+            price = this.price,
+            location = this.location,
+            category = this.category,
+            condition = this.condition,
+            timestamp = this.timestamp,
+            imageBitmaps = imageBase64List.mapNotNull { b64 -> base64ToBitmap(b64) }
+            // isDeleted from RtdbProduct is used for filtering, not directly part of domain here
+        )
     }
+    private fun Product.toRtdbData(): RtdbProduct {
+        val imageBase64List = this.imageBitmaps.mapNotNull { bitmapToBase64(it) }
+        val imagesToStore = imageBase64List.ifEmpty { null } // Store null in RTDB if no images, not an empty map
 
-    suspend fun saveProduct(product: Product) { // No longer need separate imageBitmap param
-        Log.i(TAG, "saveProduct: Starting for productId: ${product.productId}, image count: ${product.imageBitmaps.size}")
+        return RtdbProduct(
+            productId = this.productId,
+            ownerId = this.ownerId, // This should be set when Product is created
+            title = this.title,
+            description = this.description,
+            price = this.price,
+            location = this.location,
+            category = this.category,
+            condition = this.condition,
+            timestamp = this.timestamp, // Use product's timestamp for consistency
+            isDeleted = false,          // Default to false when saving
+            images = imagesToStore
+        )
+    }
+    suspend fun saveProduct(product: Product) = withContext(Dispatchers.IO) {
+        Log.i(TAG, "saveProduct (RTDB-Only): Starting for productId: ${product.productId}, image count: ${product.imageBitmaps.size}")
         try {
-            val imageBase64List = product.imageBitmaps.mapNotNull { bitmap ->
-                bitmapToBase64(bitmap)
-            }
-            Log.d(TAG, "saveProduct: Converted ${product.imageBitmaps.size} bitmaps to ${imageBase64List.size} Base64 strings for ${product.productId}.")
-
-            val productEntity = product.toEntity(imageBase64List)
-            productDao.insertProduct(productEntity)
-            Log.d(TAG, "saveProduct: Saved to Room: ${product.productId}, imageBase64List size: ${productEntity.imageBase64List.size}")
-
-            val productMetadata = product.toFirestoreMap()
-            productsCollection.document(product.productId).set(productMetadata, SetOptions.merge()).await()
-            Log.d(TAG, "saveProduct: Saved metadata to Firestore: ${product.productId}")
-
-            val imagesMapForRtdb = imageBase64List.mapIndexed { index, base64String -> index.toString() to base64String }.toMap()
-            if (imagesMapForRtdb.isNotEmpty()) {
-                productImagesRtdbRef.child(product.productId).setValue(imagesMapForRtdb).await()
-                Log.i(TAG, "saveProduct: Saved ${imagesMapForRtdb.size} images to RTDB for ${product.productId}")
-            } else {
-//                productImagesRtdbRef.child(product.productId).removeValue().await()
-                Log.d(TAG, "saveProduct: No images to save, cleared RTDB for ${product.productId}")
-            }
-
+            val rtdbData = product.toRtdbData() // This now includes images map
+            productsRtdbRef.child(product.productId).setValue(rtdbData).await()
+            Log.i(TAG, "saveProduct (RTDB-Only): Saved to RTDB: ${product.productId}")
         } catch (e: Exception) {
-            Log.e("ProductRepository", "Error saving product ${product.productId}", e)
-            throw e // Re-throw to be caught by ViewModel
+            Log.e(TAG, "Error saving product ${product.productId} to RTDB", e)
+            throw e
         }
     }
-
-    suspend fun updateProduct(product: Product, newImageBitmaps: List<Bitmap>?) { // Accept list of bitmaps
-        try {
-            var imageBase64ListToSave: List<String> = emptyList()
-            val existingProductEntity = productDao.getProductById(product.productId).firstOrNull()
-
-            if (newImageBitmaps != null) { // User provided new images (could be empty list for removal)
-                imageBase64ListToSave = newImageBitmaps.mapNotNull { bitmapToBase64(it) }
-
-                val imagesMapForRtdb = imageBase64ListToSave.mapIndexed { index, base64String ->
-                    index.toString() to base64String
-                }.toMap()
-
-                if (imagesMapForRtdb.isNotEmpty()) {
-                    productImagesRtdbRef.child(product.productId).setValue(imagesMapForRtdb).await()
-                    Log.d("ProductRepository", "Updated product images in RTDB for ${product.productId}")
-                } else {
-                    productImagesRtdbRef.child(product.productId).removeValue().await() // All images removed
-                    Log.d("ProductRepository", "All images removed from RTDB for ${product.productId}")
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun getProductById(productId: String): Flow<Product?> = callbackFlow {
+        Log.d(TAG, "getProductById (RTDB-Only): Listening to product $productId")
+        val productRef = productsRtdbRef.child(productId)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (!snapshot.exists()) {
+                    Log.w(TAG, "getProductById (RTDB-Only): Product $productId does not exist.")
+                    trySend(null).isSuccess
+                    return
                 }
-            } else {
-                // No new images provided, keep existing images from Room
-                imageBase64ListToSave = existingProductEntity?.imageBase64List ?: emptyList()
-                Log.d("ProductRepository", "No new image list provided, keeping existing ${imageBase64ListToSave.size} images for ${product.productId}")
+                try {
+                    val rtdbProduct = snapshot.getValue(RtdbProduct::class.java)
+                    if (rtdbProduct == null || rtdbProduct.isDeleted) {
+                        Log.d(TAG, "getProductById (RTDB-Only): Product $productId is null after getValue or marked deleted.")
+                        trySend(null).isSuccess
+                    } else {
+                        val domainProduct = rtdbProduct.toDomainModel()
+                        Log.d(TAG, "getProductById (RTDB-Only): Data for $productId. Domain Product: $domainProduct")
+                        trySend(domainProduct).isSuccess
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "getProductById (RTDB-Only): Error parsing product data for $productId", e)
+                    trySend(null).isSuccess // Send null on parsing error
+                }
             }
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "getProductById (RTDB-Only): Listener cancelled for $productId", error.toException())
+                close(error.toException())
+            }
+        }
+        productRef.addValueEventListener(listener)
+        awaitClose {
+            Log.d(TAG, "getProductById (RTDB-Only): Closing listener for $productId")
+            productRef.removeEventListener(listener)
+        }
+    }.flowOn(Dispatchers.IO)
 
-            val updatedProductEntity = ProductEntity(
-                productId = product.productId,
-                ownerId = product.ownerId, // Ensure ownerId is correctly populated
-                title = product.title,
-                description = product.description,
-                price = product.price,
-                location = product.location,
-                category = product.category,
-                condition = product.condition,
-                imageBase64List = imageBase64ListToSave,
-                timestamp = System.currentTimeMillis(), // Update timestamp on edit
-                isDeleted = existingProductEntity?.isDeleted ?: false
-            )
-            productDao.updateProduct(updatedProductEntity)
-            Log.d("ProductRepository", "Updated product ${product.productId} in Room")
 
-            val productMetadataUpdates = product.toFirestoreMap()
-            productsCollection.document(product.productId).set(productMetadataUpdates, SetOptions.merge()).await() // Use set with merge
-            Log.d("ProductRepository", "Updated product metadata ${product.productId} in Firestore")
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun getUserProducts(userId: String): Flow<List<Product>> = callbackFlow {
+        Log.d(TAG, "getUserProducts (RTDB-Only): Listening for ownerId: $userId")
+        // Query RTDB for products where 'ownerId' field equals the given userId
+        val query = productsRtdbRef.orderByChild("ownerId").equalTo(userId)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val products = snapshot.children.mapNotNull { productSnapshot ->
+                    productSnapshot.getValue(RtdbProduct::class.java)
+                        ?.takeIf { !it.isDeleted } // Filter out products marked as deleted
+                        ?.toDomainModel()
+                }.sortedBy { it.timestamp } // Sort by timestamp client-side for display consistency
+                Log.d(TAG, "getUserProducts (RTDB-Only): Snapshot received, ${products.size} products for user $userId")
+                trySend(products).isSuccess
+            }
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "getUserProducts (RTDB-Only): Listener cancelled for user $userId", error.toException())
+                close(error.toException())
+            }
+        }
+        query.addValueEventListener(listener)
+        awaitClose {
+            Log.d(TAG, "getUserProducts (RTDB-Only): Closing listener for user $userId")
+            query.removeEventListener(listener)
+        }
+    }.flowOn(Dispatchers.IO)
+
+
+    suspend fun updateProduct(updatedDomainProduct: Product, newImageBitmaps: List<Bitmap>?) = withContext(Dispatchers.IO) {
+        Log.i(TAG, "updateProduct (RTDB-Only): Updating productId: ${updatedDomainProduct.productId}")
+        try {
+            // Determine the final list of bitmaps
+            val finalBitmaps = newImageBitmaps ?: updatedDomainProduct.imageBitmaps
+
+            val rtdbDataToUpdate = updatedDomainProduct.copy(imageBitmaps = finalBitmaps).toRtdbData()
+            // Ensure timestamp is updated if it's a true update operation
+            // If product.timestamp was from the original, it might not reflect the update time.
+            // It's better to set it here or ensure toRtdbData() uses current time for updates if desired.
+            // For simplicity, toRtdbData will use Product.timestamp. If you need to update it:
+            // rtdbDataToUpdate.timestamp = System.currentTimeMillis()
+
+            productsRtdbRef.child(updatedDomainProduct.productId).setValue(rtdbDataToUpdate).await()
+            Log.i(TAG, "updateProduct (RTDB-Only): Successfully updated product ${updatedDomainProduct.productId} in RTDB.")
 
         } catch (e: Exception) {
-            Log.e("ProductRepository", "Error updating product ${product.productId}", e)
+            Log.e(TAG, "Error updating product ${updatedDomainProduct.productId} in RTDB", e)
             throw e
         }
     }
 
 
-    suspend fun deleteProduct(productId: String) { /* ... (logic to delete from productImagesRtdbRef.child(productId) remains the same) ... */ }
-
-    suspend fun syncProductsFromRemote() {
+    // deleteProduct: Soft delete by setting isDeleted = true in RTDB, or hard delete by removing node.
+    suspend fun deleteProduct(productId: String, isHardDelete: Boolean = false) = withContext(Dispatchers.IO) {
+        Log.i(TAG, "deleteProduct (RTDB-Only): Deleting productId: $productId, HardDelete: $isHardDelete")
         try {
-            val firestoreProducts = productsCollection.get().await().toObjects(ProductEntity::class.java)
-            Log.d("ProductRepository", "Fetched ${firestoreProducts.size} product metadata from Firestore")
-
-            val productsToSaveLocally = mutableListOf<ProductEntity>()
-
-            for (fsProductStub in firestoreProducts) {
-                var imageBase64ListFromRtdb: List<String> = emptyList()
-                try {
-                    val rtdbSnapshot = productImagesRtdbRef.child(fsProductStub.productId).get().await()
-                    if (rtdbSnapshot.exists()) {
-                        // Assuming images are stored as a map {"0": "base64_0", "1": "base64_1", ...}
-                        val imagesMap = rtdbSnapshot.value as? Map<String, String>
-                        if (imagesMap != null) {
-                            // Sort by key ("0", "1", ...) to maintain order if necessary
-                            imageBase64ListFromRtdb = imagesMap.entries.sortedBy { it.key.toIntOrNull() ?: Int.MAX_VALUE }.map { it.value }
-                            Log.d("ProductRepository","Fetched ${imageBase64ListFromRtdb.size} images from RTDB for ${fsProductStub.productId}")
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e("ProductRepository", "Error fetching images from RTDB for ${fsProductStub.productId}", e)
-                }
-                productsToSaveLocally.add(
-                    fsProductStub.copy(imageBase64List = imageBase64ListFromRtdb)
-                )
-            }
-
-            if (productsToSaveLocally.isNotEmpty()) {
-                productDao.insertAllProducts(productsToSaveLocally)
-                Log.d("ProductRepository", "Saved/updated ${productsToSaveLocally.size} products in Room from remote sync")
+            if (isHardDelete) {
+                productsRtdbRef.child(productId).removeValue().await()
+                Log.d(TAG, "Hard deleted product $productId from RTDB.")
+            } else {
+                // Soft delete: update the isDeleted flag
+                productsRtdbRef.child(productId).child("isDeleted").setValue(true).await()
+                Log.d(TAG, "Soft deleted product $productId in RTDB (set isDeleted=true).")
             }
         } catch (e: Exception) {
-            Log.e("ProductRepository", "Error syncing products from remote", e)
+            Log.e(TAG, "Error deleting product $productId from RTDB", e)
+            throw e
         }
     }
 
+    // SyncWorker methods are now effectively placeholders or would need a different purpose.
+    // With direct RTDB listeners, explicit sync from remote to Room is for cache priming.
+    // Push sync is for offline edits, which we've disabled by removing Room writes.
+    suspend fun syncProductsFromRemote() {
+        Log.w(TAG, "syncProductsFromRemote (RTDB-Only): This is now for manually priming Room cache if re-enabled. Not actively used by UI flows.")
+        // If you re-enable Room, this would fetch all from RTDB and populate Room.
+        // Example (if Room were active):
+        // try {
+        //     val snapshot = productsRtdbRef.orderByChild("timestamp").get().await()
+        //     val productList = snapshot.children.mapNotNull { rtdbSnapshotToProduct(it) }
+        //          .filter { !(it.isDeleted ?: false) }
+        //     if (productList.isNotEmpty()) {
+        //         val entities = productList.map { p -> p.toEntity(p.imageBitmaps.mapNotNull{b->bitmapToBase64(b)}) }
+        //         productDao?.insertAllProducts(entities)
+        //         Log.i(TAG, "syncProductsFromRemote (RTDB-Only): Manually synced ${entities.size} products to Room.")
+        //     }
+        // } catch (e: Exception) {
+        //     Log.e(TAG, "syncProductsFromRemote (RTDB-Only): Error during manual sync", e)
+        // }
+    }
+
     suspend fun syncProductsToRemote(lastSyncTimestamp: Long) {
-        try {
-            val productsToSyncFromRoom = productDao.getProductsToSync(lastSyncTimestamp)
-            Log.i(TAG, "syncProductsToRemote: Found ${productsToSyncFromRoom.size} products in Room potentially needing sync.")
-
-            for (localProductEntity in productsToSyncFromRoom) {
-                if (localProductEntity.isDeleted) {
-                    // Product is marked for deletion locally, propagate deletion to remote
-                    Log.i(TAG, "syncProductsToRemote: Deleting product ${localProductEntity.productId} from remote.")
-                    productsCollection.document(localProductEntity.productId).delete().await()
-                    productImagesRtdbRef.child(localProductEntity.productId).removeValue().await()
-                    productDao.deleteProductById(localProductEntity.productId) // Permanent delete from Room
-                    Log.d(TAG, "syncProductsToRemote: Permanently deleted product ${localProductEntity.productId} from Room.")
-                } else {
-                    // Product is new or updated locally, sync its metadata and images
-                    Log.i(TAG, "syncProductsToRemote: Syncing (create/update) product ${localProductEntity.productId} to remote.")
-
-                    // Always sync metadata
-                    val domainProduct = localProductEntity.toDomainModel() // Use domain for consistent toFirestoreMap
-                    val firestoreMetadata = domainProduct.toFirestoreMap()
-                    productsCollection.document(localProductEntity.productId).set(firestoreMetadata, SetOptions.merge()).await()
-                    Log.d(TAG, "syncProductsToRemote: Synced metadata for ${localProductEntity.productId} to Firestore.")
-
-                    // Regarding images for products that are NOT new (i.e., timestamp <= lastSyncTimestamp):
-                    // If a product is simply being "pushed" because its timestamp is recent due to a PULL sync,
-                    // and its local imageBase64List is empty (possibly due to a failed RTDB fetch during PULL),
-                    // we should AVOID deleting images from RTDB based on this potentially stale/incomplete local state.
-                    //
-                    // The current `getProductsToSync` fetches items with `timestamp > lastSyncTimestamp` OR `isDeleted = 1`.
-                    // If an item was just pulled by `syncProductsFromRemote`, its timestamp might be updated in Room
-                    // to match Firestore's, potentially making it appear "new" to `getProductsToSync`.
-
-                    // A product's images in RTDB should only be cleared if:
-                    // 1. The product is deleted (handled above).
-                    // 2. The user explicitly removed all images through the UI, and that change was saved to Room
-                    //    (making imageBase64List empty) AND this is a true local modification to be pushed.
-
-                    // Current logic: if local list is empty, it removes from RTDB. This is the risky part.
-                    // To make it safer, we need a way to distinguish "genuinely no images" from
-                    // "failed to sync images into Room during last pull".
-
-                    // SAFER APPROACH (but might not clear RTDB if local images are removed offline and then synced):
-                    // Only push images if the local entity HAS images. Don't do anything to RTDB if local list is empty
-                    // during a general sync push. Explicit image removal should be handled by `updateProduct`.
-                    if (localProductEntity.imageBase64List.isNotEmpty()) {
-                        val imagesMapForRtdb = localProductEntity.imageBase64List.mapIndexed { index, base64String ->
-                            index.toString() to base64String
-                        }.toMap()
-                        productImagesRtdbRef.child(localProductEntity.productId).setValue(imagesMapForRtdb).await()
-                        Log.d(TAG, "syncProductsToRemote: Synced ${imagesMapForRtdb.size} images for ${localProductEntity.productId} to RTDB.")
-                    } else {
-                        // If localProductEntity.imageBase64List is empty:
-                        // Current behavior: productImagesRtdbRef.child(productEntity.productId).removeValue().await()
-                        // This is dangerous if the emptiness is due to a failed pull sync.
-                        //
-                        // SAFER: Do not automatically delete RTDB images here.
-                        // Deletion of all images from RTDB should ideally happen when a product's images are
-                        // explicitly cleared by the user via an edit operation that results in an empty
-                        // imageBase64List being saved to Room, and THAT specific update is pushed.
-                        // OR if the product itself is deleted.
-                        Log.w(TAG, "syncProductsToRemote: localProductEntity for ${localProductEntity.productId} has no images. SKIPPING RTDB image modification for this product during general push sync to avoid accidental deletion.")
-                        // If you absolutely must clear RTDB if local is empty, then the pull sync's RTDB image fetch
-                        // must be 100% reliable or have retries.
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error syncing products to remote", e)
-        }
+        Log.w(TAG, "syncProductsToRemote (RTDB-Only): This method is for offline changes to Room, which are currently disabled.")
+        // If Room and offline edits were enabled, this would push Room changes to RTDB.
     }
 
     // --- NEW: Real-time Flow from Firestore & RTDB ---
     @OptIn(ExperimentalCoroutinesApi::class)
     fun getRealtimeAllProducts(): Flow<List<Product>> = callbackFlow {
-        Log.i(TAG, "getRealtimeAllProducts: Setting up Firestore listener for 'products' collection, where isDeleted==false, orderBy timestamp ASC.")
-
-        val listenerRegistration = productsCollection
-            .whereEqualTo("isDeleted", false) // Make sure 'isDeleted' is reliably in your Firestore docs
-            .orderBy("timestamp", Query.Direction.ASCENDING)
-            .addSnapshotListener { snapshots, error ->
-                if (error != null) {
-                    Log.e(TAG, "Firestore listen error in callbackFlow", error)
-                    close(error) // Propagate the error to close the flow
-                    return@addSnapshotListener
+        Log.i(TAG, "getRealtimeAllProducts (RTDB-Only): Setting up listener.")
+        // Order by timestamp to get newest items last (so they appear at the bottom of a list)
+        val query = productsRtdbRef.orderByChild("timestamp")
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                Log.i(TAG, "getRealtimeAllProducts (RTDB-Only): Snapshot. Children: ${snapshot.childrenCount}")
+                val productList = snapshot.children.mapNotNull { productSnapshot ->
+                    productSnapshot.getValue(RtdbProduct::class.java)
+                        ?.takeIf { !it.isDeleted } // Filter out products marked as deleted
+                        ?.toDomainModel()
                 }
-
-                if (snapshots != null) {
-                    Log.i(TAG, "getRealtimeAllProducts: Firestore snapshot received. isEmpty: ${snapshots.isEmpty}, Size: ${snapshots.size()}, Metadata HasPendingWrites: ${snapshots.metadata.hasPendingWrites()}")
-                    val productStubsFromFirestore = snapshots.toObjects(ProductEntity::class.java)
-                    Log.d(TAG, "getRealtimeAllProducts: Converted to ${productStubsFromFirestore.size} ProductEntity stubs from Firestore.")
-
-                    // Launch a new coroutine for asynchronous RTDB fetching and processing
-                    // Use the scope of the callbackFlow (this) which is a ProducerScope
-                    this.launch(Dispatchers.IO) {
-                        val productListWithImages = mutableListOf<Product>()
-                        Log.d(TAG, "getRealtimeAllProducts/launch: Processing ${productStubsFromFirestore.size} stubs.")
-
-                        for (stubFromFirestore in productStubsFromFirestore) {
-                            Log.i(TAG, "getRealtimeAllProducts/launch: --- Processing FS Stub Product ID: ${stubFromFirestore.productId} --- Title: ${stubFromFirestore.title}")
-
-                            var finalImageBase64List: List<String> = emptyList()
-                            var imageDataSource = "None" // To track where images came from
-
-                            // 1. Attempt to fetch from RTDB
-                            try {
-                                val rtdbPathChecked = productImagesRtdbRef.child(stubFromFirestore.productId).toString()
-                                Log.d(TAG, "getRealtimeAllProducts/launch: Attempting RTDB get for path: $rtdbPathChecked")
-                                val rtdbSnapshot = productImagesRtdbRef.child(stubFromFirestore.productId).get().await()
-
-                                if (rtdbSnapshot.exists()) {
-                                    Log.i(TAG, "getRealtimeAllProducts/launch: RTDB snapshot EXISTS for ${stubFromFirestore.productId}. Value type: ${rtdbSnapshot.value?.javaClass?.name}")
-                                    val imagesMap = rtdbSnapshot.value as? Map<String, String>
-                                    if (imagesMap != null && imagesMap.isNotEmpty()) {
-                                        finalImageBase64List = imagesMap.entries
-                                            .sortedBy { entry -> entry.key.toIntOrNull() ?: Int.MAX_VALUE }
-                                            .map { entry -> entry.value }
-                                        imageDataSource = "RTDB"
-                                        Log.i(TAG, "getRealtimeAllProducts/launch: Got ${finalImageBase64List.size} images from RTDB for ${stubFromFirestore.productId}")
-                                    } else {
-                                        Log.w(TAG, "getRealtimeAllProducts/launch: RTDB imagesMap is null or empty for ${stubFromFirestore.productId} despite snapshot existing. Raw value: ${rtdbSnapshot.value}")
-                                    }
-                                } else {
-                                    Log.w(TAG, "getRealtimeAllProducts/launch: No RTDB images node at $rtdbPathChecked (snapshot does not exist).")
-                                }
-                            } catch (e: Exception) {
-                                Log.e(TAG, "getRealtimeAllProducts/launch: EXCEPTION fetching RTDB images for ${stubFromFirestore.productId}", e)
-                                // Don't assign to rtdbFetchError, just let finalImageBase64List remain empty
-                            }
-
-                            // 2. <<< FALLBACK TO ROOM IF RTDB FETCH YIELDED NO IMAGES >>>
-                            //    This is especially for newly created items where RTDB might have a slight propagation delay.
-                            if (finalImageBase64List.isEmpty()) {
-                                Log.d(TAG, "getRealtimeAllProducts/launch: RTDB yielded no images for ${stubFromFirestore.productId}. Checking Room as fallback.")
-                                val entityFromRoom = productDao.getProductById(stubFromFirestore.productId).firstOrNull() // One-time read from Room
-                                if (entityFromRoom != null && entityFromRoom.imageBase64List.isNotEmpty()) {
-                                    finalImageBase64List = entityFromRoom.imageBase64List
-                                    imageDataSource = "Room (Fallback)"
-                                    Log.i(TAG, "getRealtimeAllProducts/launch: Got ${finalImageBase64List.size} images from ROOM FALLBACK for ${stubFromFirestore.productId}")
-                                } else {
-                                    Log.w(TAG, "getRealtimeAllProducts/launch: No images found in Room fallback either for ${stubFromFirestore.productId}")
-                                }
-                            }
-
-                            val bitmaps = finalImageBase64List.mapNotNull { base64Str -> base64ToBitmap(base64Str) }
-                            Log.i(TAG, "getRealtimeAllProducts/launch: Product ID ${stubFromFirestore.productId}, Image Source: $imageDataSource, Final Bitmaps: ${bitmaps.size}")
-
-                            productListWithImages.add(
-                                Product( // Construct domain model directly
-                                    productId = stubFromFirestore.productId,
-                                    ownerId = stubFromFirestore.ownerId,
-                                    title = stubFromFirestore.title,
-                                    description = stubFromFirestore.description,
-                                    price = stubFromFirestore.price,
-                                    location = stubFromFirestore.location,
-                                    category = stubFromFirestore.category,
-                                    condition = stubFromFirestore.condition,
-                                    timestamp = stubFromFirestore.timestamp,
-                                    imageBitmaps = bitmaps
-                                )
-                            )
-                        }
-                        Log.i(TAG, "getRealtimeAllProducts/launch: Finished processing all stubs. Emitting list of ${productListWithImages.size} products.")
-                        trySend(productListWithImages) // Firestore query already orders by timestamp ASC
-                    }
-                } else {
-                    Log.d(TAG, "getRealtimeAllProducts: Firestore snapshot is null in callbackFlow.")
-                    trySend(emptyList())
-                }
+                // RTDB query orderByChild("timestamp") sorts numbers in ascending order.
+                Log.i(TAG, "getRealtimeAllProducts (RTDB-Only): Emitting ${productList.size} products.")
+                trySend(productList).isSuccess
             }
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "getRealtimeAllProducts (RTDB-Only): Listener cancelled", error.toException())
+                close(error.toException())
+            }
+        }
+        query.addValueEventListener(listener)
         awaitClose {
-            Log.d(TAG, "getRealtimeAllProducts: Closing Firestore listener.")
-            listenerRegistration.remove()
+            Log.d(TAG, "getRealtimeAllProducts (RTDB-Only): Closing listener.")
+            query.removeEventListener(listener)
         }
-    }
+    }.flowOn(Dispatchers.IO)
 
-    // This is the existing Room-based flow (good for offline/initial load before listener is ready)
-    fun getLocalProductsSorted(): Flow<List<Product>> { // Renamed for clarity
-        // Ensure your DAO query sorts by timestamp ASC
-        return productDao.getAllProducts().map { entities ->
-            Log.d("ProductRepository", "getLocalProductsSorted emitting ${entities.size} products from Room")
-            entities.map { it.toDomainModel() }
-        }
-    }
+
+//    // This is the existing Room-based flow (good for offline/initial load before listener is ready)
+//    fun getLocalProductsSorted(): Flow<List<Product>> { // Renamed for clarity
+//        // Ensure your DAO query sorts by timestamp ASC
+//        return productDao.getAllProducts().map { entities ->
+//            Log.d("ProductRepository", "getLocalProductsSorted emitting ${entities.size} products from Room")
+//            entities.map { it.toDomainModel() }
+//        }
+//    }
     fun ProductEntity.toDomainModel(): Product {
         Log.d(TAG, "ProductEntity.toDomainModel for ${this.productId}, Entity.imageBase64List size: ${this.imageBase64List.size}")
         val bitmaps = this.imageBase64List.mapNotNull { base64String ->

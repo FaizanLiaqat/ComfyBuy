@@ -30,7 +30,7 @@ class SearchResultsViewModel(application: Application, private val initialSearch
     private val realtimeDatabase = FirebaseDatabase.getInstance("https://messamfaizanahmed-default-rtdb.asia-southeast1.firebasedatabase.app") // Get FirebaseDatabase instance
 
     // Initialize the ProductRepository with the necessary DAOs and Firebase instances
-    private val productRepository = ProductRepository(productDao, firestore, realtimeDatabase)
+//    private val productRepository = ProductRepository(productDao, firestore, realtimeDatabase)
 
     // MutableStateFlow to hold the current search query.
     // MutableStateFlow is a Flow that holds a single value and emits updates to collectors.
@@ -45,28 +45,28 @@ class SearchResultsViewModel(application: Application, private val initialSearch
     // Combine the Flow of all products from the repository with the search query Flow
     // and any other filter/sort StateFlows.
     // The 'combine' operator emits a new value whenever any of the source Flows emit a value.
-    val products: LiveData<List<Product>> = combine(
-        productRepository.getAllProducts(), // Flow of all products from the local database
-        searchQuery // Flow of the current search query
-        // TODO: Include other filter/sort StateFlows here (e.g., _selectedCategory)
-    ) { productList, query ->
-        // This block is executed whenever productList or query changes.
-        // It applies filtering and sorting logic to the product list.
-
-        // Apply filtering logic here based on the current search query and other filter states.
-        // This example performs a basic case-insensitive check on product title and description.
-        productList.filter { product ->
-            // Check if the product title contains the query (case-insensitive)
-            product.title.contains(query, ignoreCase = true) ||
-                    // Check if the product description (if not null) contains the query (case-insensitive)
-                    (product.description?.contains(query, ignoreCase = true) ?: false)
-            // TODO: Add more sophisticated filtering based on category, price, location, etc.
-            // Example: && (_selectedCategory.value == null || product.category == _selectedCategory.value)
-        }
-        // TODO: Apply sorting logic here based on the selected sort order.
-        // Example: .sortedBy { it.price } // Sort by price
-        // Example: .sortedByDescending { it.timestamp } // Sort by newest (if timestamp is in Product model)
-    }.asLiveData() // Convert the resulting combined Flow to LiveData for UI observation.
+//    val products: LiveData<List<Product>> = combine(
+//        productRepository.getAllProducts(), // Flow of all products from the local database
+//        searchQuery // Flow of the current search query
+//        // TODO: Include other filter/sort StateFlows here (e.g., _selectedCategory)
+//    ) { productList, query ->
+//        // This block is executed whenever productList or query changes.
+//        // It applies filtering and sorting logic to the product list.
+//
+//        // Apply filtering logic here based on the current search query and other filter states.
+//        // This example performs a basic case-insensitive check on product title and description.
+//        productList.filter { product ->
+//            // Check if the product title contains the query (case-insensitive)
+//            product.title.contains(query, ignoreCase = true) ||
+//                    // Check if the product description (if not null) contains the query (case-insensitive)
+//                    (product.description?.contains(query, ignoreCase = true) ?: false)
+//            // TODO: Add more sophisticated filtering based on category, price, location, etc.
+//            // Example: && (_selectedCategory.value == null || product.category == _selectedCategory.value)
+//        }
+//        // TODO: Apply sorting logic here based on the selected sort order.
+//        // Example: .sortedBy { it.price } // Sort by price
+//        // Example: .sortedByDescending { it.timestamp } // Sort by newest (if timestamp is in Product model)
+//    }.asLiveData() // Convert the resulting combined Flow to LiveData for UI observation.
 
     // Function to update the search query from the UI (e.g., when the user types in the search bar).
     fun setSearchQuery(query: String) {

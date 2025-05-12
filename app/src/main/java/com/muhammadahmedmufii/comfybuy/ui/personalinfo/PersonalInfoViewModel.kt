@@ -37,7 +37,7 @@ class PersonalInfoViewModel(application: Application) : AndroidViewModel(applica
         val firestore = FirebaseFirestore.getInstance()
         // Ensure RTDB URL is correct
         val rtdb = FirebaseDatabase.getInstance("https://messamfaizanahmed-default-rtdb.asia-southeast1.firebasedatabase.app")
-        userRepository = UserRepository(db.userDao(), firebaseAuth, firestore, rtdb)
+        userRepository = UserRepository( firebaseAuth,  rtdb)
 
         loadCurrentUserDetails()
     }
@@ -55,7 +55,7 @@ class PersonalInfoViewModel(application: Application) : AndroidViewModel(applica
                     firebaseAuth.currentUser?.uid?.let { userId ->
                         viewModelScope.launch(Dispatchers.IO) {
                             try {
-                                userRepository.fetchAndSaveUser(userId)
+                                userRepository.getUserById(userId)
                                 // Rely on collectLatest to pick up the change
                             } catch (e: Exception) {
                                 Log.e("PersonalInfoVM", "Error fetching user details", e)

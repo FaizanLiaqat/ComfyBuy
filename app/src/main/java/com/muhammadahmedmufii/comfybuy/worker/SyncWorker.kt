@@ -31,8 +31,11 @@ class SyncWorker(
     private val realtimeDatabase = FirebaseDatabase.getInstance("https://messamfaizanahmed-default-rtdb.asia-southeast1.firebasedatabase.app")
     val firebaseDatabase =FirebaseDatabase.getInstance("https://messamfaizanahmed-default-rtdb.asia-southeast1.firebasedatabase.app") // Get RTDB instance
 
-    private val userRepository = UserRepository(userDao, firebaseAuth, firestore, firebaseDatabase)
-    private val productRepository = ProductRepository(productDao, firestore, realtimeDatabase)
+//    private val userRepository = UserRepository(userDao, firebaseAuth, firestore, firebaseDatabase)
+//    private val productRepository = ProductRepository(productDao, firestore, realtimeDatabase)
+
+    private val userRepository = UserRepository( firebaseAuth, firebaseDatabase)
+//    private val productRepository = ProductRepository( firestore, realtimeDatabase)
 
     // Define a key for storing the last sync timestamp in SharedPreferences
     private val LAST_SYNC_TIMESTAMP_PREF = "last_sync_timestamp_pref"
@@ -47,13 +50,13 @@ class SyncWorker(
         try {
             // --- Pull Sync: Fetch data from remote (Firebase) and save to local (Room) ---
             Log.d("SyncWorker", "Performing pull sync from remote...")
-            productRepository.syncProductsFromRemote()
+//            productRepository.syncProductsFromRemote()
             // TODO: Implement pull sync for users if needed (e.g., fetching data of other users)
             // For current user, fetchAndSaveUser is typically called after login/signup.
 
             // --- Push Sync: Push local changes (new, updated, deleted) to remote (Firebase) ---
             Log.d("SyncWorker", "Performing push sync to remote...")
-            productRepository.syncProductsToRemote(lastSyncTimestamp)
+//            productRepository.syncProductsToRemote(lastSyncTimestamp)
             // TODO: Implement push sync for user data if user can update their profile offline
 
             // --- Update Last Sync Timestamp ---

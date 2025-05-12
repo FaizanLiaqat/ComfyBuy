@@ -82,10 +82,10 @@ class SearchResultsActivity : AppCompatActivity() {
 
     private fun observeViewModel() {
         // Observe the products LiveData from the ViewModel
-        searchResultsViewModel.products.observe(this) { productList ->
-            // Update the adapter with the new list of products whenever it changes
-            productAdapter.submitList(productList) // Use submitList with ListAdapter
-        }
+//        searchResultsViewModel.products.observe(this) { productList ->
+//            // Update the adapter with the new list of products whenever it changes
+//            productAdapter.submitList(productList) // Use submitList with ListAdapter
+//        }
         // TODO: Observe other LiveData from ViewModel if needed (e.g., loading state, error messages)
     }
 

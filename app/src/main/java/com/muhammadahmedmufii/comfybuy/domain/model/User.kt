@@ -1,21 +1,20 @@
-
-// --- domain/model/User.kt ---
 package com.muhammadahmedmufii.comfybuy.domain.model
 
 import android.graphics.Bitmap
 
 data class User(
     val userId: String,
-    var fullName: String?, // Make var if directly editable from this model instance
-    var email: String?,    // Make var if directly editable (careful with auth email)
+    var fullName: String?,
+    var email: String?,
     var profileImageBitmap: Bitmap?,
-    var username: String?, // Make var
-    var bio: String?,      // Make var
-    var location: String?, // Make var
-    var phoneNumber: String? = null, // NEW - Make var
-    var gender: String? = null,      // NEW - Make var
-    val followerCount: Int = 0,
-    val followingCount: Int = 0,
-    val productCount: Int = 0,
-    var dateOfBirth: String? = null  // NEW - Make var (e.g., "MMMM d, yyyy")
+    var username: String?,
+    var bio: String?,
+    var location: String?,
+    var phoneNumber: String? = null,
+    var gender: String? = null,
+    var dateOfBirth: String? = null,
+    val followerCount: Int = 0,    // These will be harder to maintain in RTDB without transactions
+    val followingCount: Int = 0,  // or Cloud Functions. For now, keeping them.
+    val productCount: Int = 0,    // This would be a derived count.
+    val timestamp: Long = System.currentTimeMillis() // Ensure this exists
 )

@@ -11,6 +11,7 @@ import com.google.firebase.database.FirebaseDatabase // Import FirebaseDatabase
 import android.app.Application // ViewModelProvider.Factory needs Application context
 import android.util.Log
 import androidx.lifecycle.LiveData
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onStart
 
@@ -20,19 +21,21 @@ class HomeViewModel(application: Application) : ViewModel() {
     private val productRepository: ProductRepository
 
     init {
-        val database = AppDatabase.getDatabase(application)
-        val productDao = database.productDao()
-        val firestore = FirebaseFirestore.getInstance()
+        // val database = AppDatabase.getDatabase(application) // REMOVE
+        // val productDao = database.productDao() // REMOVE
+        // val firestore = FirebaseFirestore.getInstance() // REMOVE
         val realtimeDatabase = FirebaseDatabase.getInstance("https://messamfaizanahmed-default-rtdb.asia-southeast1.firebasedatabase.app")
-        productRepository = ProductRepository(productDao, firestore, realtimeDatabase)
-        Log.d(TAG, "ViewModel initialized. products LiveData created.")
+        val firebaseAuth = FirebaseAuth.getInstance() // ProductRepository now takes this
+
+        // Instantiate with null for Dao and Firestore if constructor allows, or remove them
+        productRepository = ProductRepository( realtimeDatabase, firebaseAuth) // Adjust constructor if changed
+        Log.d(TAG, "ViewModel initialized with RTDB-only ProductRepository.")
     }
 
-    // Use the real-time flow
     val products: LiveData<List<Product>> = productRepository.getRealtimeAllProducts()
-        .onStart { Log.d(TAG, "products flow collection started.") } // Log when collection starts
+        .onStart { Log.d(TAG, "HomeVM: products flow collection started.") }
         .catch { exception ->
-            Log.e(TAG, "Error in getRealtimeAllProducts flow", exception)
+            Log.e(TAG, "HomeVM: Error in getRealtimeAllProducts flow", exception)
             emit(emptyList())
         }
         .asLiveData()

@@ -32,8 +32,9 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     val firebaseDatabase = FirebaseDatabase.getInstance("https://messamfaizanahmed-default-rtdb.asia-southeast1.firebasedatabase.app") // Get RTDB instance
 
     // Pass RTDB instance to UserRepository
-    private val userRepository = UserRepository(userDao, firebaseAuth, firestore, firebaseDatabase)
-    private val productRepository = ProductRepository(productDao, firestore, realtimeDatabase)
+//    private val userRepository = UserRepository(userDao, firebaseAuth, firestore, firebaseDatabase)
+//    private val productRepository = ProductRepository(productDao, firestore, realtimeDatabase)
+    private val userRepository = UserRepository( firebaseAuth, firebaseDatabase)
 
     // Get the current authenticated user's ID
     private val currentUserId: String?
@@ -45,16 +46,16 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     // Expose the current user's products from the repository as LiveData
     // We use switchMap to get the user's ID from the currentUser LiveData
     // and then fetch their products using that ID.
-    val userProducts: LiveData<List<Product>> = currentUser.switchMap { user ->
-        val userId = user?.userId
-        if (userId != null) {
-            // If user is logged in, get their products from the repository
-            productRepository.getUserProducts(userId).asLiveData() // Assuming ProductRepository has getUserProducts
-        } else {
-            // If no user is logged in, return a LiveData with an empty list
-            liveData { emit(emptyList()) } // Requires import androidx.lifecycle.liveData
-        }
-    }
+//    val userProducts: LiveData<List<Product>> = currentUser.switchMap { user ->
+//        val userId = user?.userId
+//        if (userId != null) {
+//            // If user is logged in, get their products from the repository
+//            productRepository.getUserProducts(userId).asLiveData() // Assuming ProductRepository has getUserProducts
+//        } else {
+//            // If no user is logged in, return a LiveData with an empty list
+//            liveData { emit(emptyList()) } // Requires import androidx.lifecycle.liveData
+//        }
+//    }
 
     // TODO: Add LiveData for Favorites and Reviews if you implement those tabs
 

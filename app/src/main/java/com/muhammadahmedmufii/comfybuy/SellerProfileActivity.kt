@@ -77,35 +77,35 @@ class SellerProfileActivity : AppCompatActivity() {
     }
 
     private fun observeViewModel() {
-        viewModel.sellerDetails.observe(this) { seller ->
-            if (seller != null) {
-                binding.toolbarSellerProfile.title = "${seller.fullName ?: "Seller"}'s Profile" // Set toolbar title
-                binding.name.text = seller.fullName ?: "Seller Not Found"
-                binding.subtitle.text = seller.bio ?: "No bio available."
-
-                seller.profileImageBitmap?.let { bitmap ->
-                    Glide.with(this).load(bitmap)
-                        .placeholder(R.drawable.avatar_placeholder)
-                        .error(R.drawable.avatar_placeholder)
-                        .into(binding.avatar)
-                } ?: binding.avatar.setImageResource(R.drawable.avatar_placeholder)
-
-                // Update stats - these would ideally come from separate LiveData/aggregations
-                binding.countFollowers.text = "-" // Placeholder
-                binding.countFollowing.text = "-" // Placeholder
-            } else {
-                binding.toolbarSellerProfile.title = "Profile Not Found"
-                binding.name.text = "Seller Not Found"
-                binding.subtitle.text = ""
-                binding.avatar.setImageResource(R.drawable.avatar_placeholder)
-                binding.countListings.text = "0"
-            }
-        }
-
-        viewModel.sellerProducts.observe(this) { productList ->
-            productAdapter.submitList(productList)
-            binding.countListings.text = productList.size.toString()
-        }
+//        viewModel.sellerDetails.observe(this) { seller ->
+//            if (seller != null) {
+//                binding.toolbarSellerProfile.title = "${seller.fullName ?: "Seller"}'s Profile" // Set toolbar title
+//                binding.name.text = seller.fullName ?: "Seller Not Found"
+//                binding.subtitle.text = seller.bio ?: "No bio available."
+//
+//                seller.profileImageBitmap?.let { bitmap ->
+//                    Glide.with(this).load(bitmap)
+//                        .placeholder(R.drawable.avatar_placeholder)
+//                        .error(R.drawable.avatar_placeholder)
+//                        .into(binding.avatar)
+//                } ?: binding.avatar.setImageResource(R.drawable.avatar_placeholder)
+//
+//                // Update stats - these would ideally come from separate LiveData/aggregations
+//                binding.countFollowers.text = "-" // Placeholder
+//                binding.countFollowing.text = "-" // Placeholder
+//            } else {
+//                binding.toolbarSellerProfile.title = "Profile Not Found"
+//                binding.name.text = "Seller Not Found"
+//                binding.subtitle.text = ""
+//                binding.avatar.setImageResource(R.drawable.avatar_placeholder)
+//                binding.countListings.text = "0"
+//            }
+//        }
+//
+//        viewModel.sellerProducts.observe(this) { productList ->
+//            productAdapter.submitList(productList)
+//            binding.countListings.text = productList.size.toString()
+//        }
     }
 
     private fun setupTabListeners() {
