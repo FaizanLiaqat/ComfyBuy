@@ -59,7 +59,7 @@
 //
 //        navMessages.setOnClickListener {
 //            try {
-//                val intent = Intent(this, Class.forName("com.muhammadahmedmufii.comfybuy.Messages"))
+//                val intent = Intent(this, Class.forName("com.muhammadahmedmufii.comfybuy.ui.messages.Messages"))
 //                startActivity(intent)
 //                finish()
 //            } catch (e: ClassNotFoundException) {
@@ -152,7 +152,7 @@ class ProfileActivity : AppCompatActivity() {
 
         navMessages.setOnClickListener {
             try {
-                val intent = Intent(this, Class.forName("com.muhammadahmedmufii.comfybuy.Messages"))
+                val intent = Intent(this, Class.forName("com.muhammadahmedmufii.comfybuy.ui.messages.Messages"))
                 startActivity(intent)
                 finish()
             } catch (e: ClassNotFoundException) {

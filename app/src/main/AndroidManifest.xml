@@ -68,7 +68,7 @@
             android:name=".SellerProfileActivity"
             android:exported="false" />
         <activity
-            android:name=".Messages"
+            android:name=".ui.messages.MessagesFragment"
             android:exported="false" />
         <activity
             android:name=".home"

@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.muhammadahmedmufii.comfybuy.ui.home.HomeFragment // Import HomeFragment
+import com.muhammadahmedmufii.comfybuy.ui.messages.MessagesFragment
 import com.muhammadahmedmufii.comfybuy.ui.productdetail.ProductDetailFragment
 import com.muhammadahmedmufii.comfybuy.ui.profile.ProfileFragment
 
@@ -82,12 +83,11 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
         findViewById<LinearLayout>(R.id.navMessages).setOnClickListener {
-            // TODO: Replace with MessagesFragment when created
-            // replaceFragment(MessagesFragment())
-            showPlaceholderToast("Messages")
-            val intent = Intent(this, Messages::class.java) // Create MessagesActivity
-            startActivity(intent)
-            // TODO: Update UI state of bottom nav icons
+            replaceFragment(MessagesFragment.newInstance()) // Navigate to MessagesFragment
+            // No longer starts Messages Activity:
+            // showPlaceholderToast("Messages")
+            // val intent = Intent(this, Messages::class.java)
+            // startActivity(intent)
         }
         findViewById<LinearLayout>(R.id.navProfile).setOnClickListener {
             // TODO: Replace with ProfileFragment when created
@@ -131,5 +131,19 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "navigateToMainProfileTab called - replacing with ProfileFragment")
         replaceFragment(ProfileFragment.newInstance()) // <<< USE YOUR ProfileFragment
         // TODO: Update bottom navigation visual state to highlight profile
+    }
+
+    // Method for ProductDetailFragment to initiate a chat
+    fun navigateToChat(opponentUserId: String, opponentName: String, opponentProfilePicResId: Int) {
+        Log.d(TAG, "navigateToChat called for opponent: $opponentName (ID: $opponentUserId)")
+        val intent = Intent(this, ChatActivity::class.java).apply {
+            putExtra("CHAT_USER_ID", opponentUserId) // Important: Pass the other user's ID
+            putExtra("CHAT_NAME", opponentName)
+            putExtra("CHAT_PROFILE_PIC_RES_ID", opponentProfilePicResId) // Change if using URL/Base64
+        }
+        startActivity(intent)
+        // If ChatActivity also becomes ChatFragment:
+        // val chatFragment = ChatFragment.newInstance(opponentUserId, opponentName, opponentProfilePicResId)
+        // replaceFragment(chatFragment, "chat")
     }
 }

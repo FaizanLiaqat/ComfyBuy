@@ -195,10 +195,17 @@ override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         }
 
         binding.chatButton.setOnClickListener {
-            val sellerId = viewModel.seller.value?.userId
-            if (sellerId != null) {
-                Toast.makeText(requireContext(), "Chat with seller $sellerId clicked", Toast.LENGTH_SHORT).show()
-                // TODO: Navigate to Chat
+            val seller = viewModel.seller.value
+            if (seller != null && seller.userId.isNotEmpty()) {
+                Log.d(TAG, "Chat button clicked for seller: ${seller.fullName}")
+                // For now, using a placeholder drawable for profile pic.
+                // In a real scenario, you'd pass the actual profileImageBitmap converted to URI/path
+                // or the Base64 string / URL if ChatActivity handles that.
+                (activity as? MainActivity)?.navigateToChat(
+                    opponentUserId = seller.userId,
+                    opponentName = seller.fullName ?: "Seller",
+                    opponentProfilePicResId = R.drawable.avatar_placeholder // Placeholder
+                )
             } else {
                 Toast.makeText(requireContext(), "Seller information not available for chat.", Toast.LENGTH_SHORT).show()
             }

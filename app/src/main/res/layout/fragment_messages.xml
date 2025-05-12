@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
-    tools:context=".Messages">
+    tools:context=".ui.messages.MessagesFragment">
 
     <TextView
         android:id="@+id/tvTitle"
@@ -47,7 +47,7 @@
                 android:layout_gravity="center_vertical"
                 android:layout_marginStart="8dp"
                 android:src="@drawable/ic_search"
-                android:tint="#A0A0A0" />
+                app:tint="#A0A0A0" />
 
             <EditText
                 android:id="@+id/etSearch"
@@ -71,19 +71,12 @@
         android:clipToPadding="false"
         android:paddingBottom="8dp"
         android:overScrollMode="ifContentScrolls"
-        app:layout_constraintBottom_toTopOf="@id/bottomNavContainer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/cardSearch"
+        app:layout_constraintBottom_toBottomOf="parent"
         tools:listitem="@layout/item_message" />
 
-    <include
-        android:id="@+id/bottomNavContainer"
-        layout="@layout/layout_bottom_navigation"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

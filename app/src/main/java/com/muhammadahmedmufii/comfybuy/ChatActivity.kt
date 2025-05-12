@@ -3,6 +3,7 @@ package com.muhammadahmedmufii.comfybuy
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,6 +16,8 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class ChatActivity : AppCompatActivity() {
+
+
     private lateinit var rv: RecyclerView
     private lateinit var etMessage: TextInputEditText
     private lateinit var btnSend: ImageView
@@ -52,9 +55,12 @@ class ChatActivity : AppCompatActivity() {
         tvStatus = findViewById(R.id.tvStatus)
         profilePic = findViewById(R.id.profilePic)
 
-        // Get data from intent
-        val chatName = intent.getStringExtra("CHAT_NAME") ?: "Sarah M."
-        val profilePicRes = intent.getIntExtra("CHAT_PROFILE_PIC", R.drawable.ic_apple)
+        val opponentChatUserId = intent.getStringExtra("CHAT_USER_ID") // Get the other user's ID
+        val chatName = intent.getStringExtra("CHAT_NAME") ?: "Chat User"
+        val profilePicRes = intent.getIntExtra("CHAT_PROFILE_PIC_RES_ID", R.drawable.avatar_placeholder)
+
+        Log.d("ChatActivity", "Chatting with User ID: $opponentChatUserId, Name: $chatName")
+
 
         // Set up toolbar
         tvName.text = chatName
