@@ -28,7 +28,7 @@ class ProductAdapter(
         val productName: TextView = itemView.findViewById(R.id.tvProductName)
         val productPrice: TextView = itemView.findViewById(R.id.tvPrice)
         val productLocation: TextView = itemView.findViewById(R.id.tvLocation)
-        val productDistance: TextView = itemView.findViewById(R.id.tvDistance) // Assuming you have this ID
+       val productDistance: TextView = itemView.findViewById(R.id.tvDistance) // Assuming you have this ID
         // Add other views from item_product.xml as needed (e.g., favorite icon)
     }
 

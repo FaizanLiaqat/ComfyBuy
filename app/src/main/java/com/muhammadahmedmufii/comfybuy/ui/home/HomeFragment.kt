@@ -1,187 +1,195 @@
-package com.muhammadahmedmufii.comfybuy.ui.home // Recommended package structure for UI
+// --- ui/searchresults/SearchResultsFragment.kt ---
+package com.muhammadahmedmufii.comfybuy.ui.home
 
-import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CompoundButton
 import android.widget.EditText
-import android.widget.ImageView
-import android.widget.TextView
+import android.widget.LinearLayout
 import android.widget.Toast
-import androidx.fragment.app.Fragment // *** CHANGE: Extend Fragment ***
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.setPadding
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.chip.Chip
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+
 import com.muhammadahmedmufii.comfybuy.MainActivity
 import com.muhammadahmedmufii.comfybuy.ProductAdapter
-import com.muhammadahmedmufii.comfybuy.ui.productdetail.ProductDetailFragment
 import com.muhammadahmedmufii.comfybuy.R
-import com.muhammadahmedmufii.comfybuy.SyncWorkScheduler
+import com.muhammadahmedmufii.comfybuy.databinding.FragmentMysearchResultBinding
+import com.muhammadahmedmufii.comfybuy.databinding.FragmentSearchResultsBinding
 
 
-// CHANGE: Renamed from 'home' to 'HomeFragment' and extends Fragment
 class HomeFragment : Fragment() {
-    private val TAG = "HomeFragment"
     companion object {
-        fun newInstance() = HomeFragment()
+        private const val ARG_SEARCH_QUERY = "search_query"
+        /**
+         * Factory method to create a new instance of this fragment using the provided query.
+         */
+        @JvmStatic
+        fun newInstance(query: String?) = HomeFragment().apply {
+            arguments = Bundle().apply { putString(ARG_SEARCH_QUERY, query) }
+        }
     }
-    private lateinit var recycler: RecyclerView
-    private lateinit var productAdapter: ProductAdapter
-    private lateinit var homeViewModel: HomeViewModel
+    private val tag = "HomeFragment"
+    private var _binding: FragmentMysearchResultBinding? = null
+    private val binding get() = _binding!!
+    private lateinit var viewModel: HomeViewModel
+    private lateinit var adapter: ProductAdapter
+    private var initialSearchQuery: String? = null
 
-    // References to category TextViews
-    private lateinit var allCategoryButton: TextView
-    private lateinit var furnitureCategoryButton: TextView
-    private lateinit var homeCategoryButton: TextView
-    private lateinit var fashionCategoryButton: TextView
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        initialSearchQuery = arguments?.getString("search_query")
+        Log.d(tag, "Initial query: $initialSearchQuery")
+    }
 
-    // References to search bar elements
-    private lateinit var searchEdit: EditText
-    private lateinit var filterIcon: ImageView
-
-    // --- Bottom navigation views removed from here ---
-    // These will be in the hosting activity (MainActivity) now.
-    // private lateinit var homeIcon: ImageView
-    // private lateinit var searchIconBottom: ImageView
-    // private lateinit var sellIcon: ImageView
-    // private lateinit var messagesIcon: ImageView
-    // private lateinit var profileIcon: ImageView
-
-
-    // --- CHANGE: Use onCreateView to inflate the layout ---
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.activity_home, container, false) // Use the existing home layout
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentMysearchResultBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
-    // --- CHANGE: Use onViewCreated for view setup after inflation ---
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        viewModel = ViewModelProvider(
+            this,
+            HomeViewModelFactory(requireActivity().application, initialSearchQuery)
+        ).get(HomeViewModel::class.java)
 
-        // Initialize ViewModel using requireActivity() to scope it to the hosting Activity
-        val factory = HomeViewModelFactory(requireActivity().application)
-        homeViewModel = ViewModelProvider(requireActivity(), factory).get(HomeViewModel::class.java)
+        setupRecyclerView()
+        setupSearch()
+        setupFilters()
+        observe()
 
-        // Schedule the periodic sync work
-        // Consider moving this to MainActivity or an Application class for better lifecycle management
-        // if you want to ensure it runs as long as the app is open, not just when HomeFragment is visible.
-        SyncWorkScheduler.schedulePeriodicSync(requireContext())
-
-
-        initViews(view) // Initialize UI elements from the inflated view
-        setupRecyclerView() // Setup RecyclerView and Adapter
-        Log.d(TAG, "onViewCreated. Setting up observers.")
-        observeViewModel() // Observe data from ViewModel
-        setupCategoryListeners() // Setup Category button click listeners
-        setupSearchBarListeners() // Setup Search bar/Filter icon listeners
-
-
-    }
-
-    // --- CHANGE: Pass the inflated view to initViews ---
-    private fun initViews(view: View) {
-        recycler = view.findViewById(R.id.productRecycler)
-
-        // Initialize category buttons
-        allCategoryButton = view.findViewById(R.id.allCategoryButton)
-        furnitureCategoryButton = view.findViewById(R.id.furnitureCategoryButton)
-        homeCategoryButton = view.findViewById(R.id.homeCategoryButton)
-        fashionCategoryButton = view.findViewById(R.id.fashionCategoryButton)
-
-        // Initialize search bar elements
-        searchEdit = view.findViewById(R.id.searchEdit)
-        filterIcon = view.findViewById(R.id.filterIcon)
-
-        // --- Bottom navigation views initialization removed from here ---
-        // homeIcon = view.findViewById(R.id.homeIcon)
-        // searchIconBottom = view.findViewById(R.id.searchIconBottom)
-        // sellIcon = view.findViewById(R.id.sellIcon)
-        // messagesIcon = view.findViewById(R.id.messagesIcon)
-        // profileIcon = view.findViewById(R.id.profileIcon)
+        initialSearchQuery?.let { binding.etSearch.setText(it) }
     }
 
     private fun setupRecyclerView() {
-        // 1) setup RecyclerView as 2-column grid
-        // --- CHANGE: Use requireContext() or context instead of 'this' ---
-        recycler.layoutManager = GridLayoutManager(requireContext(), 2)
-
-        // Initialize the adapter with an empty list initially
-        productAdapter = ProductAdapter { product ->
+        adapter = ProductAdapter { product ->
             (activity as? MainActivity)?.navigateToProductDetail(product.productId)
         }
-        recycler.adapter = productAdapter // Set the adapter to the RecyclerView
+        binding.recyclerViewProducts.layoutManager = GridLayoutManager(requireContext(), 2)
+        binding.recyclerViewProducts.adapter = adapter
     }
 
-   private fun observeViewModel() { // <<< UNCOMMENTED AND KEPT YOUR LOGGING >>>
-        homeViewModel.products.observe(viewLifecycleOwner) { productList ->
-            Log.i(TAG, "Products LiveData observer triggered. List size: ${productList.size}")
-            if (productList.isNotEmpty()) {
-                // Log details for a few products to check image counts
-                productList.take(3).forEachIndexed { index, product ->
-                    Log.d(TAG, "Product[$index]: ${product.title}, Image count: ${product.imageBitmaps.size}")
-                    if (product.imageBitmaps.isNotEmpty()) {
-                        Log.d(TAG, "Product[$index]: First bitmap valid: ${product.imageBitmaps[0] != null} (Width: ${product.imageBitmaps[0]?.width})")
-                    } else {
-                         Log.d(TAG, "Product[$index]: '${product.title}' has no bitmaps.")
-                    }
+    private fun setupSearch() {
+        binding.etSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                viewModel.setSearchQuery(s.toString())
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+        binding.etSearch.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                viewModel.setSearchQuery(binding.etSearch.text.toString())
+                (activity?.getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager)
+                    ?.hideSoftInputFromWindow(binding.etSearch.windowToken, 0)
+                binding.etSearch.clearFocus()
+                true
+            } else false
+        }
+    }
+
+    private fun setupFilters() {
+        // Sort
+        /*
+        binding.sortRadioGroup.setOnCheckedChangeListener { _, checkedId ->
+            val sort = when (checkedId) {
+                R.id.rbNewest -> HomeViewModel.SortBy.NEWEST
+                R.id.rbPriceLowHigh -> HomeViewModel.SortBy.PRICE_LOW_HIGH
+                R.id.rbPriceHighLow -> HomeViewModel.SortBy.PRICE_HIGH_LOW
+                else -> HomeViewModel.SortBy.NEWEST
+            }
+            viewModel.setSortOrder(sort)
+        }
+        */
+
+
+        // Category & Price
+        val categoryChips = listOf(
+            binding.chipElectronics,
+            binding.chipHome,
+            binding.chipClothing
+        )
+        fun clearCategories() {
+            categoryChips.forEach { it.isChecked = false }
+        }
+        categoryChips.forEach { chip ->
+            chip.setOnCheckedChangeListener { button, isChecked ->
+                if (isChecked) {
+                    // clear others and price
+                    categoryChips.filter { it != chip }.forEach { it.isChecked = false }
+                    binding.chipPrice.isChecked = false
+                    viewModel.setPriceRangeFilter(null, null)
+                    viewModel.setCategoryFilter(chip.text.toString())
+                } else {
+                    viewModel.setCategoryFilter(null)
                 }
             }
-            productAdapter.submitList(productList)
-            Log.d(TAG, "Submitted list to adapter. Adapter current itemCount: ${productAdapter.itemCount}")
+        }
+
+        // Price
+        binding.chipPrice.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                clearCategories()
+                showPriceDialog()
+            } else {
+                viewModel.setPriceRangeFilter(null, null)
+            }
+        }
+
+        // Location placeholder
+        binding.chipLocation.setOnClickListener {
+            Toast.makeText(requireContext(), "Welcome to ComfyBuy!", Toast.LENGTH_SHORT).show()
         }
     }
 
-
-
-
-    private fun setupCategoryListeners() {
-        // Basic click listeners for category buttons (filtering logic comes later)
-        allCategoryButton.setOnClickListener {
-            // --- CHANGE: Use requireContext() instead of context ---
-            Toast.makeText(requireContext(), "All category selected", Toast.LENGTH_SHORT).show()
-            // TODO: Implement filtering logic to show all products (in ViewModel)
-        }
-        furnitureCategoryButton.setOnClickListener {
-            // --- CHANGE: Use requireContext() instead of context ---
-            Toast.makeText(requireContext(), "Furniture category selected", Toast.LENGTH_SHORT).show()
-            // TODO: Implement filtering logic for Furniture (in ViewModel)
-        }
-        homeCategoryButton.setOnClickListener {
-            // --- CHANGE: Use requireContext() instead of context ---
-            Toast.makeText(requireContext(), "Home category selected", Toast.LENGTH_SHORT).show()
-            // TODO: Implement filtering logic for Home (in ViewModel)
-        }
-        fashionCategoryButton.setOnClickListener {
-            // --- CHANGE: Use requireContext() instead of context ---
-            Toast.makeText(requireContext(), "Fashion category selected", Toast.LENGTH_SHORT).show()
-            // TODO: Implement filtering logic for Fashion (in ViewModel)
+    private fun observe() {
+        viewModel.products.observe(viewLifecycleOwner) { list ->
+            adapter.submitList(list)
+            if (list.isEmpty() && binding.etSearch.text.isNotEmpty()) {
+                Toast.makeText(requireContext(), "No products found.", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
-    private fun setupSearchBarListeners() {
-        // Assuming you have EditText with ID searchEdit and ImageView with ID filterIcon
-        // --- CHANGE: Use the 'view' parameter to find views ---
-        // Already done in initViews()
-
-
-        searchEdit.setOnClickListener {
-            // --- CHANGE: Use requireContext() instead of context ---
-            Toast.makeText(requireContext(), "Search bar clicked", Toast.LENGTH_SHORT).show()
-            // TODO: Implement search functionality (e.g., navigate to a search screen or show search results)
-            // Now you would typically navigate to the SearchResultsFragment from the hosting Activity
-            // Example (requires MainActivity to have a method to navigate):
-            // (activity as? MainActivity)?.navigateToSearch("initial query")
+    private fun showPriceDialog() {
+        val layout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(32)
         }
+        val etMin = EditText(requireContext()).apply { hint = "Min price"; inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL }
+        val etMax = EditText(requireContext()).apply { hint = "Max price"; inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL }
+        layout.addView(etMin)
+        layout.addView(etMax)
 
-        filterIcon.setOnClickListener {
-            // --- CHANGE: Use requireContext() instead of context ---
-            Toast.makeText(requireContext(), "Filter icon clicked", Toast.LENGTH_SHORT).show()
-            // TODO: Implement filter functionality (e.g., show a filter dialog)
-        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Price Range")
+            .setView(layout)
+            .setPositiveButton("Apply") { _, _ ->
+                val min = etMin.text.toString().toDoubleOrNull() ?: 0.0
+                val max = etMax.text.toString().toDoubleOrNull() ?: Double.MAX_VALUE
+                viewModel.setPriceRangeFilter(min, max)
+            }
+            .setNegativeButton("Clear") { _, _ ->
+                binding.chipPrice.isChecked = false
+                viewModel.setPriceRangeFilter(null, null)
+            }
+            .show()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

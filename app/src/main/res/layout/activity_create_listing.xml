@@ -75,11 +75,11 @@
 
         <!-- Selected thumbnails -->
         <HorizontalScrollView
+            android:id="@+id/selectedScroll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:visibility="gone"
-            android:id="@+id/selectedScroll">
+            android:visibility="gone">
 
             <LinearLayout
                 android:id="@+id/selectedContainer"
@@ -107,59 +107,27 @@
                 android:inputType="text"/>
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Category picker -->
-        <LinearLayout
-            android:id="@+id/pickCategory"
+        <!-- Category spinner -->
+        <Spinner
+            android:id="@+id/spinnerCategory"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
             android:layout_marginTop="12dp"
+            android:spinnerMode="dropdown"
+            android:background="@drawable/bg_outlined"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:background="@drawable/bg_outlined">
+            android:paddingEnd="12dp" />
 
-            <TextView
-                android:id="@+id/tvCategory"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Select category"
-                android:textSize="14sp"
-                android:textColor="#6D6D6D"/>
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_chevron_right"/>
-        </LinearLayout>
-
-        <!-- Condition picker -->
-        <LinearLayout
-            android:id="@+id/pickCondition"
+        <!-- Condition spinner -->
+        <Spinner
+            android:id="@+id/spinnerCondition"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
             android:layout_marginTop="12dp"
+            android:spinnerMode="dropdown"
+            android:background="@drawable/bg_outlined"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:background="@drawable/bg_outlined">
-
-            <TextView
-                android:id="@+id/tvCondition"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Select condition"
-                android:textSize="14sp"
-                android:textColor="#6D6D6D"/>
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_chevron_right"/>
-        </LinearLayout>
+            android:paddingEnd="12dp" />
 
         <!-- Price input -->
         <com.google.android.material.textfield.TextInputLayout
@@ -178,6 +146,29 @@
                 android:layout_height="48dp"
                 android:hint="$ 0.00"
                 android:inputType="numberDecimal"/>
+
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Price input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginTop="12dp"
+            app:boxCornerRadiusTopStart="8dp"
+            app:boxCornerRadiusTopEnd="8dp"
+            app:boxCornerRadiusBottomStart="8dp"
+            app:boxCornerRadiusBottomEnd="8dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/location"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:hint="Location"
+                android:inputType="text"/>
+
+
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Description with counter -->
@@ -210,8 +201,8 @@
             android:layout_height="48dp"
             android:layout_marginTop="24dp"
             android:text="Post Listing"
-
             android:backgroundTint="#FF6B6B"
             android:textColor="#FFFFFF"/>
+
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

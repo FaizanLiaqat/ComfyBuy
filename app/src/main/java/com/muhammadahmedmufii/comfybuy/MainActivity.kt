@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.LinearLayout // Import LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.fragment.app.Fragment
 import com.muhammadahmedmufii.comfybuy.ui.home.HomeFragment // Import HomeFragment
 import com.muhammadahmedmufii.comfybuy.ui.messages.MessagesFragment
@@ -19,6 +20,9 @@ import com.muhammadahmedmufii.comfybuy.ui.searchresults.SearchResultsFragment
 // import com.muhammadahmedmufii.comfybuy.ui.messages.MessagesFragment
 // import com.muhammadahmedmufii.comfybuy.ui.postad.PostAdFragment
 
+var openSearch = false
+var openProfile = false
+
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -31,6 +35,16 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main) // Use the new main activity layout
 
+        openSearch = intent.getBooleanExtra("openSearchFragment", false)
+        if (openSearch) {
+            //Toast.makeText(this, "Opening Search Fragment", Toast.LENGTH_SHORT).show()
+            replaceFragment(SearchResultsFragment.newInstance(null))
+        }
+        openProfile = intent.getBooleanExtra("openProfileFragment", false)
+        if (openProfile) {
+            //Toast.makeText(this, "Opening Profile Fragment", Toast.LENGTH_SHORT).show()
+            replaceFragment(ProfileFragment.newInstance())
+        }
         // Set up initial fragment
         if (savedInstanceState == null) {
             // Check intent that started this activity first
@@ -51,14 +65,14 @@ class MainActivity : AppCompatActivity() {
                 Log.w(TAG, "ACTION_SHOW_PRODUCT_DETAIL received but no EXTRA_PRODUCT_ID_TO_SHOW found.")
                 // Fallback to home if product ID is missing
                 if (supportFragmentManager.findFragmentById(R.id.fragment_container) == null) {
-                    replaceFragment(HomeFragment.newInstance())
+                    replaceFragment(HomeFragment.newInstance(""))
                 }
             }
         } else {
             // Default action if no specific intent action (e.g., on first launch)
             if (supportFragmentManager.findFragmentById(R.id.fragment_container) == null) {
                 Log.d(TAG, "No specific action in intent, showing HomeFragment.")
-                replaceFragment(HomeFragment.newInstance()) // Assuming HomeFragment has newInstance()
+                replaceFragment(HomeFragment.newInstance("")) // Assuming HomeFragment has newInstance()
             }
         }
     }
@@ -73,7 +87,8 @@ class MainActivity : AppCompatActivity() {
             replaceFragment(HomeFragment()) // Display HomeFragment
             // TODO: Update UI state of bottom nav icons (e.g., highlight Home)
         }
-        findViewById<LinearLayout>(R.id.navSearch).setOnClickListener {
+        if (openSearch) { replaceFragment(SearchResultsFragment.newInstance(null))}
+            findViewById<LinearLayout>(R.id.navSearch).setOnClickListener {
             replaceFragment(SearchResultsFragment.newInstance(null)) // Pass null or an initial query
         }
         findViewById<LinearLayout>(R.id.navSell).setOnClickListener {
@@ -81,12 +96,15 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
         findViewById<LinearLayout>(R.id.navMessages).setOnClickListener {
-            replaceFragment(MessagesFragment.newInstance()) // Navigate to MessagesFragment
+           //replaceFragment(MessagesFragment.newInstance()) // Navigate to MessagesFragment
             // No longer starts Messages Activity:
             // showPlaceholderToast("Messages")
-            // val intent = Intent(this, Messages::class.java)
-            // startActivity(intent)
+            //replaceFragment(ChatListActivity.newInstance(null))
+            val intent = Intent(this, ChatListActivity::class.java)
+            startActivity(intent)
+            finish() // Optional, if you want to close the current activity
         }
+        if (openProfile) { replaceFragment(ProfileFragment.newInstance())}
         findViewById<LinearLayout>(R.id.navProfile).setOnClickListener {
             // TODO: Replace with ProfileFragment when created
             // replaceFragment(ProfileFragment())

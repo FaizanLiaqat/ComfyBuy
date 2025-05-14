@@ -27,5 +27,26 @@
     <string name="help_center">Help Center</string>
     <string name="log_out">Log Out</string>
 
+       <!-- Existing strings -->
+        <!-- ... other strings ... -->
+
+    <!-- Category & Condition arrays with placeholder -->
+    <string-array name="categories">
+        <item>Select category</item>
+        <item>Electronics</item>
+        <item>Clothing</item>
+        <item>Home</item>
+        <item>Books</item>
+        <item>Sports</item>
+        <item>Automotive</item>
+        <!-- add more as needed -->
+    </string-array>
+
+    <string-array name="conditions">
+        <item>Select condition</item>
+        <item>New</item>
+        <item>Used</item>
+    </string-array>
+
     <string name="default_web_client_id">675968083301-hu04tgh91eoevjp7j3bgij624v1oo2d8.apps.googleusercontent.com</string>
 </resources>

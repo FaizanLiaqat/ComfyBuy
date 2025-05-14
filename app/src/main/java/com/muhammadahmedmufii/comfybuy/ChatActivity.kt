@@ -1,151 +1,260 @@
 package com.muhammadahmedmufii.comfybuy
 
-import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.widget.ImageView
-import android.widget.TextView
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.GetContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputEditText
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.*
 import de.hdodenhof.circleimageview.CircleImageView
+import android.widget.ImageView
+import android.widget.TextView
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
+import android.util.Base64
+import com.bumptech.glide.Glide
 
 class ChatActivity : AppCompatActivity() {
+    private val TAG = "ChatActivity"
+    private val RTDB_URL = "https://messamfaizanahmed-default-rtdb.asia-southeast1.firebasedatabase.app"
 
-
-    private lateinit var rv: RecyclerView
-    private lateinit var etMessage: TextInputEditText
-    private lateinit var btnSend: ImageView
-    private lateinit var btnAttach: ImageView
-    private lateinit var btnLocation: ImageView
-    private lateinit var btnBack: ImageView
-    private lateinit var tvName: TextView
-    private lateinit var tvStatus: TextView
+    // UI
+    private lateinit var rvMessages: RecyclerView
+    private lateinit var etMessage : TextInputEditText
+    private lateinit var btnSend   : ImageView
+    private lateinit var btnAttach : ImageView
+    private lateinit var tvStatus  : TextView
+    private lateinit var btnBack   : ImageView
     private lateinit var profilePic: CircleImageView
+    private lateinit var tvName    : TextView
 
+    // Data
     private val messages = mutableListOf<ChatMessage>()
     private lateinit var adapter: ChatAdapter
 
-    private val getImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let {
-            val time = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date())
-            messages.add(ChatMessage.SentImage(it, time))
-            adapter.notifyItemInserted(messages.size - 1)
-            rv.scrollToPosition(messages.size - 1)
-        }
+    // Firebase
+    private lateinit var db          : FirebaseDatabase
+    private lateinit var messagesRef: DatabaseReference
+    private lateinit var statusRef  : DatabaseReference
+    private lateinit var myStatusRef: DatabaseReference
+
+    // IDs
+    private lateinit var chatId      : String
+    private lateinit var opponentId  : String
+    private lateinit var currentUid  : String
+
+    // pick image
+    private val pickImage = registerForActivityResult(GetContent()) { uri: Uri? ->
+        uri?.let { sendImageAsBase64(it) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat)
 
-        // Initialize views
-        rv = findViewById(R.id.rvMessages)
-        etMessage = findViewById(R.id.etMessage)
-        btnSend = findViewById(R.id.btnSend)
-        btnAttach = findViewById(R.id.btnAttach)
-        btnLocation = findViewById(R.id.btnLocation)
-        btnBack = findViewById(R.id.btnBack)
-        tvName = findViewById(R.id.tvName)
-        tvStatus = findViewById(R.id.tvStatus)
-        profilePic = findViewById(R.id.profilePic)
+        // pull Intent extras
+        chatId     = intent.getStringExtra("CHAT_ID") ?: run { finish(); return }
+        opponentId = intent.getStringExtra("CHAT_USER_ID") ?: run { finish(); return }
+        val chatName = intent.getStringExtra("CHAT_NAME") ?: "Chat"
 
-        val opponentChatUserId = intent.getStringExtra("CHAT_USER_ID") // Get the other user's ID
-        val chatName = intent.getStringExtra("CHAT_NAME") ?: "Chat User"
-        val profilePicRes = intent.getIntExtra("CHAT_PROFILE_PIC_RES_ID", R.drawable.avatar_placeholder)
+        // Firebase init
+        currentUid = FirebaseAuth.getInstance().currentUser!!.uid
+        db         = FirebaseDatabase.getInstance(RTDB_URL)
 
-        Log.d("ChatActivity", "Chatting with User ID: $opponentChatUserId, Name: $chatName")
+        // bind UI
+        btnBack     = findViewById(R.id.btnBack)
+        profilePic  = findViewById(R.id.profilePic)
+        tvName      = findViewById(R.id.tvName)
+        tvStatus    = findViewById(R.id.tvStatus)
+        rvMessages  = findViewById(R.id.rvMessages)
+        etMessage   = findViewById(R.id.etMessage)
+        btnSend     = findViewById(R.id.btnSend)
+        btnAttach   = findViewById(R.id.btnAttach)
 
-
-        // Set up toolbar
         tvName.text = chatName
-        tvStatus.text = "Online"
-        profilePic.setImageResource(profilePicRes)
+        btnBack.setOnClickListener { finish() }
+        loadOpponentProfilePic()
 
-        // Set up back button
-        btnBack.setOnClickListener {
-            finish()
-        }
-
-        // Set up RecyclerView
+        // RecyclerView
         adapter = ChatAdapter(messages)
-        rv.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
-        rv.adapter = adapter
+        rvMessages.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
+        rvMessages.adapter = adapter
 
-        // Load initial messages
-        loadInitialMessages()
+        // DB refs
+        messagesRef = db.reference.child("chats").child(chatId).child("messages")
+        statusRef   = db.reference.child("status").child(opponentId)
+        myStatusRef = db.reference.child("status").child(currentUid)
 
-        // Set up click listeners
-        setupClickListeners()
+        goOnline()
+        listenToOpponentStatus()
+
+        btnSend.setOnClickListener { sendMessage() }
+        btnAttach.setOnClickListener { pickImage.launch("image/*") }
+
+        listenForMessages()
     }
 
-    private fun loadInitialMessages() {
-        // Clear any existing messages
-        messages.clear()
-
-        // Add sample messages to match the screenshot
-        messages.add(ChatMessage.ReceivedText("Hi! Is the backpack still available?", "10:30 AM"))
-        messages.add(ChatMessage.SentText("Yes, it's still available! Are you interested?", "10:31 AM"))
-        messages.add(ChatMessage.ReceivedText("Great! Could you tell me more about its condition?", "10:32 AM"))
-
-        adapter.notifyDataSetChanged()
-        rv.scrollToPosition(messages.size - 1)
+    override fun onDestroy() {
+        super.onDestroy()
+        messagesRef.removeEventListener(childListener)
+        myStatusRef.onDisconnect().cancel()
+        myStatusRef.setValue(false)
     }
 
-    private fun setupClickListeners() {
-        // Send button click listener
-        btnSend.setOnClickListener {
-            val txt = etMessage.text.toString().trim()
-            if (txt.isNotEmpty()) {
-                val time = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date())
-                messages.add(ChatMessage.SentText(txt, time))
-                adapter.notifyItemInserted(messages.size - 1)
-                rv.scrollToPosition(messages.size - 1)
-                etMessage.text?.clear()
-
-                // Simulate received response after a delay
-                simulateResponse()
+    // Presence
+    private fun goOnline() {
+        myStatusRef.onDisconnect().setValue(false)
+        myStatusRef.setValue(true)
+    }
+    private fun listenToOpponentStatus() {
+        statusRef.addValueEventListener(object: ValueEventListener {
+            override fun onDataChange(snap: DataSnapshot) {
+                val online = snap.getValue(Boolean::class.java) ?: false
+                tvStatus.text = if (online) "Online" else "Offline"
+                tvStatus.setTextColor(if (online) 0xFF4CAF50.toInt() else 0xFF888888.toInt())
             }
-        }
+            override fun onCancelled(err: DatabaseError) {}
+        })
+    }
 
-        // Attach button click listener
-        btnAttach.setOnClickListener {
-            getImage.launch("image/*")
-        }
+    // Profile pic loader
+    private fun loadOpponentProfilePic() {
+        // Fetch the Base64 string directly from the user node
+        db.reference.child("users")
+            .child(opponentId)
+            .child("profileImageBase64")
+            .addListenerForSingleValueEvent(object: ValueEventListener {
+                override fun onDataChange(snap: DataSnapshot) {
+                    val b64 = snap.getValue(String::class.java)
+                    if (!b64.isNullOrEmpty()) {
+                        val bmp = base64ToBitmap(b64)
+                        if (bmp != null) {
+                            profilePic.setImageBitmap(bmp)
+                        } else {
+                            Log.e(TAG, "loadOpponentProfilePic: Failed to decode Base64 image")
+                        }
+                    } else {
+                        Log.w(TAG, "loadOpponentProfilePic: No Base64 string found for user $opponentId")
+                    }
+                }
+                override fun onCancelled(err: DatabaseError) {
+                    Log.e(TAG, "loadOpponentProfilePic cancelled", err.toException())
+                }
+            })
+    }
 
-        // Location button click listener
-        btnLocation.setOnClickListener {
-            // Implement location sharing functionality
-            // For now, just show a toast
-            android.widget.Toast.makeText(this, "Location sharing coming soon!", android.widget.Toast.LENGTH_SHORT).show()
+
+    // Messaging
+    private lateinit var childListener: ChildEventListener
+    private fun listenForMessages() {
+        childListener = object: ChildEventListener {
+            override fun onChildAdded(snap: DataSnapshot, prev: String?) {
+                val dto  = snap.getValue(MessageDto::class.java) ?: return
+                val time = SimpleDateFormat("hh:mm a", Locale.getDefault())
+                    .format(Date(dto.timestamp))
+                val msg = when {
+                    dto.imageUrl != null -> {
+                        // imageUrl holds Base64 string
+                        val uri = base64ToUri(dto.imageUrl)
+                        if (dto.senderId == currentUid)
+                            ChatMessage.SentImage(uri!!, time)
+                        else
+                            ChatMessage.ReceivedImage(uri!!, time)
+                    }
+                    dto.senderId == currentUid ->
+                        ChatMessage.SentText(dto.text!!, time)
+                    else ->
+                        ChatMessage.ReceivedText(dto.text!!, time)
+                }
+                messages.add(msg)
+                adapter.notifyItemInserted(messages.size - 1)
+                rvMessages.scrollToPosition(messages.size - 1)
+            }
+            override fun onCancelled(err: DatabaseError) {}
+            override fun onChildChanged(s: DataSnapshot, p: String?) {}
+            override fun onChildMoved(s: DataSnapshot, p: String?) {}
+            override fun onChildRemoved(s: DataSnapshot) {}
+        }
+        messagesRef.orderByChild("timestamp").addChildEventListener(childListener)
+    }
+    private fun sendMessage() {
+        val text = etMessage.text.toString().trim()
+        if (text.isEmpty()) return
+        val key = messagesRef.push().key ?: return
+        val now = System.currentTimeMillis()
+        messagesRef.child(key)
+            .setValue(MessageDto(currentUid, text, null, now))
+            .addOnSuccessListener { etMessage.text?.clear() }
+            .addOnFailureListener { Log.e(TAG, "send failed", it) }
+    }
+
+    // Send image as Base64
+    private fun sendImageAsBase64(uri: Uri) {
+        val key = messagesRef.push().key ?: return
+        val now = System.currentTimeMillis()
+        val b64 = uriToBase64(uri)
+        if (b64 == null) {
+            Log.e(TAG, "Failed to convert image to Base64")
+            return
+        }
+        messagesRef.child(key)
+            .setValue(MessageDto(currentUid, null, b64, now))
+    }
+
+    // Conversion helpers
+    private fun bitmapToBase64(bitmap: Bitmap?): String? {
+        if (bitmap == null) {
+            Log.w(TAG, "bitmapToBase64: Received null bitmap.")
+            return null
+        }
+        return try {
+            val baos = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 75, baos)
+            val byteArray = baos.toByteArray()
+            Base64.encodeToString(byteArray, Base64.NO_WRAP)
+        } catch (e: Exception) {
+            Log.e(TAG, "bitmapToBase64 error", e)
+            null
         }
     }
 
-    private fun simulateResponse() {
-        // Simulate typing indicator
-        // In a real app, you would show a typing indicator here
+    private fun base64ToBitmap(base64String: String?): Bitmap? {
+        if (base64String.isNullOrEmpty()) return null
+        return try {
+            val decoded = Base64.decode(base64String, Base64.DEFAULT)
+            BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
+        } catch (e: Exception) {
+            Log.e(TAG, "base64ToBitmap error", e)
+            null
+        }
+    }
 
-        // Simulate delay before response
-        rv.postDelayed({
-            val time = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date())
-            val responseOptions = listOf(
-                "Thanks for the information!",
-                "That sounds great!",
-                "I'll get back to you soon.",
-                "Can we meet tomorrow to see the item?",
-                "Is the price negotiable?",
-                "Do you have any other items for sale?"
-            )
+    private fun uriToBase64(uri: Uri): String? {
+        return try {
+            val bmp = contentResolver.openInputStream(uri)
+                ?.use { BitmapFactory.decodeStream(it) }
+            bitmapToBase64(bmp)
+        } catch (e: Exception) {
+            Log.e(TAG, "uriToBase64 error", e)
+            null
+        }
+    }
 
-            val randomResponse = responseOptions.random()
-            messages.add(ChatMessage.ReceivedText(randomResponse, time))
-            adapter.notifyItemInserted(messages.size - 1)
-            rv.scrollToPosition(messages.size - 1)
-        }, 1500) // 1.5 second delay
+    private fun base64ToUri(base64String: String?): Uri? {
+        val bmp = base64ToBitmap(base64String) ?: return null
+        val file = File(cacheDir, "img_${System.currentTimeMillis()}.jpg")
+        FileOutputStream(file).use { out ->
+            bmp.compress(Bitmap.CompressFormat.JPEG, 75, out)
+        }
+        return Uri.fromFile(file)
     }
 }

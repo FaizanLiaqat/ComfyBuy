@@ -1,5 +1,6 @@
 package com.muhammadahmedmufii.comfybuy
 
+/*
 import android.content.Intent
 import android.os.Bundle
 import android.widget.EditText
@@ -60,9 +61,9 @@ class home : AppCompatActivity() {
 
         // Initialize category buttons
         allCategoryButton = findViewById(R.id.allCategoryButton)
-        furnitureCategoryButton = findViewById(R.id.furnitureCategoryButton)
+        furnitureCategoryButton = findViewById(R.id.ElectronicsCategoryButton)
         homeCategoryButton = findViewById(R.id.homeCategoryButton)
-        fashionCategoryButton = findViewById(R.id.fashionCategoryButton)
+        fashionCategoryButton = findViewById(R.id.ClothingCategoryButton)
 
         // Initialize search bar elements (assuming IDs from activity_home.xml)
         // val searchEdit = findViewById<EditText>(R.id.searchEdit) // Assuming EditText
@@ -158,3 +159,4 @@ class home : AppCompatActivity() {
         }
     }
 }
+*/

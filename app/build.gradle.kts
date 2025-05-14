@@ -49,6 +49,8 @@ dependencies {
 
     // Keep your existing dependencies
     implementation ("com.github.bumptech.glide:glide:4.16.0")
+    implementation(libs.firebase.storage.ktx)
+    kapt ("com.github.bumptech.glide:compiler:4.15.1")
     implementation ("com.google.android.material:material:1.8.0")
     implementation ("de.hdodenhof:circleimageview:3.1.0")
     implementation(libs.androidx.core.ktx)

@@ -47,13 +47,17 @@ class CreateListingViewModel(application: Application) : AndroidViewModel(applic
         _saveStatus.value = ListingSaveStatus.Loading
         val currentUserId = firebaseAuth.currentUser?.uid
 
+
         if (currentUserId == null) {
             _saveStatus.value = ListingSaveStatus.Error("User not authenticated. Please log in.")
             return
         }
 
+       // val locationRef = FirebaseDatabase.getInstance().getReference("users/$currentUserId/location")
         val productId = UUID.randomUUID().toString()
         val currentTimestamp = System.currentTimeMillis() // Ensure consistent timestamp
+
+
 
         val newProduct = Product(
             productId = productId,
